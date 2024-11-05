@@ -1,4 +1,4 @@
+mod alu;
 mod registers;
 
-fn main() {
-}
+fn main() {}
