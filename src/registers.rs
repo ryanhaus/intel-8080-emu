@@ -147,7 +147,7 @@ impl Register {
 }
 
 // RegisterValue enum - could either be a 8-bit or 16-bit integer value
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum RegisterValue {
     Integer8(u8),
     Integer8Pair(u8, u8),
