@@ -2,6 +2,7 @@
  * alu.rs - contains code relating to the arithmetic & logic unit (ALU)
  * see the datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
+use super::registers::RegisterValue;
 
 // ALUFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -46,6 +47,8 @@ pub enum ALUOperation {
     SubBorrow(u8, u8),
     Increment(u8),
     Decrement(u8),
+    Increment16(u16),
+    Decrement16(u16),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -75,16 +78,18 @@ impl ALU {
 
     // evaluates a given ALUOperation, updates flags & internal registers,
     // and returns the result
-    pub fn evaluate(&mut self, operation: ALUOperation) -> u8 {
+    pub fn evaluate(&mut self, operation: ALUOperation) -> RegisterValue {
         use ALUOperation::*;
 
         match operation {
-            Add(x, y) => self.add(x, y, false),
-            AddCarry(x, y) => self.add(x, y, true),
-            Sub(x, y) => self.sub(x, y, false),
-            SubBorrow(x, y) => self.sub(x, y, true),
-            Increment(x) => self.inc_dec(x, true),
-            Decrement(x) => self.inc_dec(x, false),
+            Add(x, y) => self.add(x, y, false).into(),
+            AddCarry(x, y) => self.add(x, y, true).into(),
+            Sub(x, y) => self.sub(x, y, false).into(),
+            SubBorrow(x, y) => self.sub(x, y, true).into(),
+            Increment(x) => self.inc_dec(x, true).into(),
+            Decrement(x) => self.inc_dec(x, false).into(),
+            Increment16(x) => self.inc_dec16(x, true).into(),
+            Decrement16(x) => self.inc_dec16(x, false).into(),
         }
     }
 
@@ -137,7 +142,7 @@ impl ALU {
         result
     }
 
-    // performs increment/decrement operations, and updates internal registers
+    // performs 8-bit increment/decrement operations, and updates internal registers
     // and flags, returns result
     fn inc_dec(&mut self, x: u8, increment: bool) -> u8 {
         // the increment/decrement operations do NOT modify the carry flag,
@@ -154,6 +159,16 @@ impl ALU {
 
         result
     }
+
+    // performs 16-bit increment/decrement operations, does not update any flags
+    fn inc_dec16(&mut self, x: u16, increment: bool) -> u16 {
+        // no flags are updated by 16-bit operations, just return the result
+        if increment {
+            x.wrapping_add(1)
+        } else {
+            x.wrapping_sub(1)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -167,7 +182,7 @@ mod tests {
         // test some hand-picked values for adding
         // 0 + 0
         let result = alu.evaluate(ALUOperation::Add(0, 0));
-        assert_eq!(result, 0);
+        assert_eq!(result, RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, false)
@@ -175,7 +190,7 @@ mod tests {
 
         // 13 + 7
         let result = alu.evaluate(ALUOperation::Add(13, 7));
-        assert_eq!(result, 20);
+        assert_eq!(result, RegisterValue::from(20u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, true)
@@ -183,7 +198,7 @@ mod tests {
 
         // 255 + 2 (carry occurs)
         let result = alu.evaluate(ALUOperation::Add(255, 2));
-        assert_eq!(result, 1);
+        assert_eq!(result, RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, true, true)
@@ -191,7 +206,7 @@ mod tests {
 
         // 127 + 1
         let result = alu.evaluate(ALUOperation::Add(127, 1));
-        assert_eq!(result, 128);
+        assert_eq!(result, RegisterValue::from(128u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, false, false, true)
@@ -205,7 +220,7 @@ mod tests {
         // test some hand-picked values for adding with carry
         // 240 + 16
         let result = alu.evaluate(ALUOperation::AddCarry(240, 16));
-        assert_eq!(result, 0);
+        assert_eq!(result, RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, true, false)
@@ -213,7 +228,7 @@ mod tests {
 
         // 1 + 1 (should also add the carry flag to make 3)
         let result = alu.evaluate(ALUOperation::AddCarry(1, 1));
-        assert_eq!(result, 3);
+        assert_eq!(result, RegisterValue::from(3u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, false)
@@ -227,7 +242,7 @@ mod tests {
         // test some hand-picked values for subtraction
         // 7 - 3
         let result = alu.evaluate(ALUOperation::Sub(7, 3));
-        assert_eq!(result, 4);
+        assert_eq!(result, RegisterValue::from(4u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
@@ -235,7 +250,7 @@ mod tests {
 
         // 12 - 24
         let result = alu.evaluate(ALUOperation::Sub(12, 24));
-        assert_eq!(result, 12u8.wrapping_neg());
+        assert_eq!(result, RegisterValue::from(12u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, false, true, false)
@@ -243,7 +258,7 @@ mod tests {
 
         // 1 - 2
         let result = alu.evaluate(ALUOperation::Sub(1, 2));
-        assert_eq!(result, 1u8.wrapping_neg());
+        assert_eq!(result, RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, true, true)
@@ -257,7 +272,7 @@ mod tests {
         // test some hand-picked values for subtraction with carry
         // 1 - 2
         let result = alu.evaluate(ALUOperation::SubBorrow(1, 2));
-        assert_eq!(result, 1u8.wrapping_neg());
+        assert_eq!(result, RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, true, true)
@@ -265,7 +280,7 @@ mod tests {
 
         // 100 - 49 (should also include borrow to make 50)
         let result = alu.evaluate(ALUOperation::SubBorrow(100, 49));
-        assert_eq!(result, 50);
+        assert_eq!(result, RegisterValue::from(50u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
@@ -279,7 +294,7 @@ mod tests {
         // test some hand-picked values for increment
         // increment 15
         let result = alu.evaluate(ALUOperation::Increment(15));
-        assert_eq!(result, 16);
+        assert_eq!(result, RegisterValue::from(16u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, true)
@@ -287,7 +302,7 @@ mod tests {
 
         // increment 255 (overflow, but carry flag should NOT be updated)
         let result = alu.evaluate(ALUOperation::Increment(255));
-        assert_eq!(result, 0);
+        assert_eq!(result, RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, true)
@@ -301,7 +316,7 @@ mod tests {
         // test some hand-picked values for decrement
         // decrement 16
         let result = alu.evaluate(ALUOperation::Decrement(16));
-        assert_eq!(result, 15);
+        assert_eq!(result, RegisterValue::from(15u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, true)
@@ -309,10 +324,54 @@ mod tests {
 
         // decrement 0 (overflow)
         let result = alu.evaluate(ALUOperation::Decrement(0));
-        assert_eq!(result, 255);
+        assert_eq!(result, RegisterValue::from(255u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, false, true)
+        );
+    }
+
+    #[test]
+    fn alu_increment_16bit() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for 16-bit increment
+        // increment 255
+        let result = alu.evaluate(ALUOperation::Increment16(255));
+        assert_eq!(result, RegisterValue::from(256u16));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // all flags should be 0
+        );
+
+        // increment 65535 (overflow)
+        let result = alu.evaluate(ALUOperation::Increment16(65535));
+        assert_eq!(result, RegisterValue::from(0u16));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // all flags should be 0
+        );
+    }
+
+    #[test]
+    fn alu_decrement_16bit() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for 16-bit decrement
+        // decrement 256
+        let result = alu.evaluate(ALUOperation::Decrement16(256));
+        assert_eq!(result, RegisterValue::from(255u16));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // all flags should be 0
+        );
+
+        // decrement 0 (overflow)
+        let result = alu.evaluate(ALUOperation::Decrement16(0));
+        assert_eq!(result, RegisterValue::from(65535u16));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // all flags should be 0
         );
     }
 }
