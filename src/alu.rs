@@ -42,6 +42,8 @@ impl ALUFlags {
 pub enum ALUOperation {
     Add(u8, u8),
     AddCarry(u8, u8),
+    Sub(u8, u8),
+    SubBorrow(u8, u8),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -77,16 +79,20 @@ impl ALU {
         match operation {
             Add(x, y) => self.add(x, y, false),
             AddCarry(x, y) => self.add(x, y, true),
+            Sub(x, y) => self.sub(x, y, false),
+            SubBorrow(x, y) => self.sub(x, y, true),
         }
     }
 
     // performs addition, and updates internal registers & flags, returns result
     fn add(&mut self, x: u8, mut y: u8, use_carry: bool) -> u8 {
+        // if the carry is used, apply that to y
         if use_carry {
             let carry = self.flags.carry as u8;
             y = y.wrapping_add(carry);
         }
 
+        // find result, set flags
         let result = x.wrapping_add(y);
 
         self.flags.zero = (result == 0);
@@ -99,6 +105,30 @@ impl ALU {
         let y_lower = y & 0xF;
         let lower_sum = x_lower + y_lower;
         self.flags.aux_carry = (lower_sum & 0x10 > 0);
+
+        result
+    }
+
+    // performs subtraction, and updates internal registers & flags, returns result
+    fn sub(&mut self, x: u8, mut y: u8, use_carry: bool) -> u8 {
+        // if the carry is used, apply that to y
+        if use_carry {
+            let carry = self.flags.carry as u8;
+            y = y.wrapping_add(carry); // the carry is added here since y is subtracted
+        }
+
+        // find result, set flags
+        let result = x.wrapping_sub(y);
+
+        self.flags.zero = (result == 0);
+        self.flags.sign = (result & 0x80 != 0);
+        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.carry = (x.checked_sub(y) == None);
+
+        // auxiliary carry has to be found manually
+        let x_lower = x & 0xF;
+        let y_lower = y & 0xF;
+        self.flags.aux_carry = (x_lower.checked_sub(y_lower) == None);
 
         result
     }
@@ -165,6 +195,58 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_sub() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for subtraction
+        // 7 - 3
+        let result = alu.evaluate(ALUOperation::Sub(7, 3));
+        assert_eq!(result, 4);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // 12 - 24
+        let result = alu.evaluate(ALUOperation::Sub(12, 24));
+        assert_eq!(result, 12u8.wrapping_neg());
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, false, true, false)
+        );
+
+        // 1 - 2
+        let result = alu.evaluate(ALUOperation::Sub(1, 2));
+        assert_eq!(result, 1u8.wrapping_neg());
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, true, true)
+        );
+    }
+
+    #[test]
+    fn alu_sub_with_borrow() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for subtraction with carry
+        // 1 - 2
+        let result = alu.evaluate(ALUOperation::SubBorrow(1, 2));
+        assert_eq!(result, 1u8.wrapping_neg());
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, true, true)
+        );
+
+        // 100 - 49 (should also include borrow to make 50)
+        let result = alu.evaluate(ALUOperation::SubBorrow(100, 49));
+        assert_eq!(result, 50);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
         );
     }
 }
