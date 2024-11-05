@@ -41,6 +41,7 @@ impl ALUFlags {
 // to be used in the operation
 pub enum ALUOperation {
     Add(u8, u8),
+    AddCarry(u8, u8),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -74,12 +75,18 @@ impl ALU {
         use ALUOperation::*;
 
         match operation {
-            Add(x, y) => self.add(x, y),
+            Add(x, y) => self.add(x, y, false),
+            AddCarry(x, y) => self.add(x, y, true),
         }
     }
 
     // performs addition, and updates internal registers & flags, returns result
-    fn add(&mut self, x: u8, y: u8) -> u8 {
+    fn add(&mut self, x: u8, mut y: u8, use_carry: bool) -> u8 {
+        if use_carry {
+            let carry = self.flags.carry as u8;
+            y = y.wrapping_add(carry);
+        }
+
         let result = x.wrapping_add(y);
 
         self.flags.zero = (result == 0);
@@ -136,6 +143,28 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, false, false, true)
+        );
+    }
+
+    #[test]
+    fn alu_add_with_carry() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for adding with carry
+        // 240 + 16
+        let result = alu.evaluate(ALUOperation::AddCarry(240, 16));
+        assert_eq!(result, 0);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(true, false, true, true, false)
+        );
+
+        // 1 + 1 (should also add the carry flag to make 3)
+        let result = alu.evaluate(ALUOperation::AddCarry(1, 1));
+        assert_eq!(result, 3);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, true, false, false)
         );
     }
 }
