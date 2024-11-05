@@ -44,6 +44,8 @@ pub enum ALUOperation {
     AddCarry(u8, u8),
     Sub(u8, u8),
     SubBorrow(u8, u8),
+    Increment(u8),
+    Decrement(u8),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -81,6 +83,8 @@ impl ALU {
             AddCarry(x, y) => self.add(x, y, true),
             Sub(x, y) => self.sub(x, y, false),
             SubBorrow(x, y) => self.sub(x, y, true),
+            Increment(x) => self.inc_dec(x, true),
+            Decrement(x) => self.inc_dec(x, false),
         }
     }
 
@@ -129,6 +133,24 @@ impl ALU {
         let x_lower = x & 0xF;
         let y_lower = y & 0xF;
         self.flags.aux_carry = (x_lower.checked_sub(y_lower) == None);
+
+        result
+    }
+
+    // performs increment/decrement operations, and updates internal registers
+    // and flags, returns result
+    fn inc_dec(&mut self, x: u8, increment: bool) -> u8 {
+        // the increment/decrement operations do NOT modify the carry flag,
+        // so store a copy of the present value to be written back to it after the operation
+        let carry_flag_copy = self.flags.carry;
+        let result = if increment {
+            self.add(x, 1, false)
+        } else {
+            self.sub(x, 1, false)
+        };
+
+        // write back the original carry flag
+        self.flags.carry = carry_flag_copy;
 
         result
     }
@@ -247,6 +269,50 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_increment() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for increment
+        // increment 15
+        let result = alu.evaluate(ALUOperation::Increment(15));
+        assert_eq!(result, 16);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, true)
+        );
+
+        // increment 255 (overflow, but carry flag should NOT be updated)
+        let result = alu.evaluate(ALUOperation::Increment(255));
+        assert_eq!(result, 0);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(true, false, true, false, true)
+        );
+    }
+
+    #[test]
+    fn alu_decrement() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for decrement
+        // decrement 16
+        let result = alu.evaluate(ALUOperation::Decrement(16));
+        assert_eq!(result, 15);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, true, false, true)
+        );
+
+        // decrement 0 (overflow)
+        let result = alu.evaluate(ALUOperation::Decrement(0));
+        assert_eq!(result, 255);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, false, true)
         );
     }
 }
