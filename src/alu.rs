@@ -81,7 +81,7 @@ impl ALU {
 
     // evaluates a given ALUOperation, updates flags & internal registers,
     // and returns the result
-    pub fn evaluate(&mut self, operation: ALUOperation) -> Result<RegisterValue, String> {
+    pub fn evaluate(&mut self, operation: ALUOperation) -> Result<Option<RegisterValue>, String> {
         use ALUOperation::*;
 
         // convert the arguments in the ALUOperation from RegisterValues
@@ -117,11 +117,11 @@ impl ALU {
 
         // perform the operation
         let result = match operation {
-            Add(_, _) => self.add(x.unwrap(), y.unwrap(), false).into(),
-            AddCarry(_, _) => self.add(x.unwrap(), y.unwrap(), true).into(),
-            Sub(_, _) => self.sub(x.unwrap(), y.unwrap(), false).into(),
-            SubBorrow(_, _) => self.sub(x.unwrap(), y.unwrap(), true).into(),
-            Increment(_) => {
+            Add(_, _) => Some(self.add(x.unwrap(), y.unwrap(), false).into()),
+            AddCarry(_, _) => Some(self.add(x.unwrap(), y.unwrap(), true).into()),
+            Sub(_, _) => Some(self.sub(x.unwrap(), y.unwrap(), false).into()),
+            SubBorrow(_, _) => Some(self.sub(x.unwrap(), y.unwrap(), true).into()),
+            Increment(_) => Some({
                 if let Some(x) = x {
                     self.inc_dec(x, true).into()
                 } else if let Some(x16) = x16 {
@@ -129,8 +129,8 @@ impl ALU {
                 } else {
                     return Err(String::from("Could not increment: {x:?}"));
                 }
-            }
-            Decrement(_) => {
+            }),
+            Decrement(_) => Some({
                 if let Some(x) = x {
                     self.inc_dec(x, false).into()
                 } else if let Some(x16) = x16 {
@@ -138,11 +138,11 @@ impl ALU {
                 } else {
                     return Err(String::from("Could not decrement: {x:?}"));
                 }
-            }
-            DecimalAdjust(_) => self.decimal_adjust(x.unwrap()).into(),
-            BitwiseAnd(_, _) => self.bitwise_and(x.unwrap(), y.unwrap()).into(),
-            BitwiseXor(_, _) => self.bitwise_xor(x.unwrap(), y.unwrap()).into(),
-            BitwiseOr(_, _) => self.bitwise_or(x.unwrap(), y.unwrap()).into(),
+            }),
+            DecimalAdjust(_) => Some(self.decimal_adjust(x.unwrap()).into()),
+            BitwiseAnd(_, _) => Some(self.bitwise_and(x.unwrap(), y.unwrap()).into()),
+            BitwiseXor(_, _) => Some(self.bitwise_xor(x.unwrap(), y.unwrap()).into()),
+            BitwiseOr(_, _) => Some(self.bitwise_or(x.unwrap(), y.unwrap()).into()),
         };
 
         Ok(result)
@@ -307,7 +307,7 @@ mod tests {
                 RegisterValue::from(0u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, false)
@@ -320,7 +320,7 @@ mod tests {
                 RegisterValue::from(7u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(20u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(20u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, true)
@@ -333,7 +333,7 @@ mod tests {
                 RegisterValue::from(2u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(1u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, true, true)
@@ -346,7 +346,7 @@ mod tests {
                 RegisterValue::from(1u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(128u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(128u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, false, false, true)
@@ -365,7 +365,7 @@ mod tests {
                 RegisterValue::from(16u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, true, false)
@@ -378,7 +378,7 @@ mod tests {
                 RegisterValue::from(1u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(3u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(3u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, false)
@@ -397,7 +397,7 @@ mod tests {
                 RegisterValue::from(3u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(4u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(4u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
@@ -410,7 +410,7 @@ mod tests {
                 RegisterValue::from(24u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(12u8.wrapping_neg()));
+        assert_eq!(result.unwrap(), RegisterValue::from(12u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, false, true, false)
@@ -423,7 +423,7 @@ mod tests {
                 RegisterValue::from(2u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(1u8.wrapping_neg()));
+        assert_eq!(result.unwrap(), RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, true, true)
@@ -442,7 +442,7 @@ mod tests {
                 RegisterValue::from(2u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(1u8.wrapping_neg()));
+        assert_eq!(result.unwrap(), RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, true, true)
@@ -455,7 +455,7 @@ mod tests {
                 RegisterValue::from(49u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(50u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(50u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
@@ -471,7 +471,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Increment(RegisterValue::from(15u8)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(16u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(16u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, true)
@@ -481,7 +481,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Increment(RegisterValue::from(255u8)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, true)
@@ -497,7 +497,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Decrement(RegisterValue::from(16u8)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(15u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(15u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, true)
@@ -507,7 +507,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Decrement(RegisterValue::from(0u8)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(255u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(255u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, false, true)
@@ -523,7 +523,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Increment(RegisterValue::from(255u16)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(256u16));
+        assert_eq!(result.unwrap(), RegisterValue::from(256u16));
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // all flags should be 0
@@ -533,7 +533,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Increment(RegisterValue::from(65535u16)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0u16));
+        assert_eq!(result.unwrap(), RegisterValue::from(0u16));
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // all flags should be 0
@@ -549,7 +549,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Decrement(RegisterValue::from(256u16)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(255u16));
+        assert_eq!(result.unwrap(), RegisterValue::from(255u16));
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // all flags should be 0
@@ -559,7 +559,7 @@ mod tests {
         let result = alu
             .evaluate(ALUOperation::Decrement(RegisterValue::from(0u16)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(65535u16));
+        assert_eq!(result.unwrap(), RegisterValue::from(65535u16));
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // all flags should be 0
@@ -577,11 +577,12 @@ mod tests {
                 RegisterValue::from(0x5u8),
                 RegisterValue::from(0x3u8),
             ))
+            .unwrap()
             .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x8u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x8u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
@@ -593,11 +594,12 @@ mod tests {
                 RegisterValue::from(0x15u8),
                 RegisterValue::from(0x27u8),
             ))
+            .unwrap()
             .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x42u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x42u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, true)
@@ -609,11 +611,12 @@ mod tests {
                 RegisterValue::from(0x99u8),
                 RegisterValue::from(0x01u8),
             ))
+            .unwrap()
             .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x00u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, true, false)
@@ -632,7 +635,7 @@ mod tests {
                 RegisterValue::from(0xF0u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x30u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x30u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, true, false, false)
@@ -645,7 +648,7 @@ mod tests {
                 RegisterValue::from(0x00u8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x00u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, false)
@@ -660,11 +663,11 @@ mod tests {
         // bitwise XOR 0x55 and 0xFF
         let result = alu
             .evaluate(ALUOperation::BitwiseXor(
-                    RegisterValue::from(0x55u8),
-                    RegisterValue::from(0xFFu8),
+                RegisterValue::from(0x55u8),
+                RegisterValue::from(0xFFu8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0xAAu8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0xAAu8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, false, false)
@@ -673,11 +676,11 @@ mod tests {
         // bitwise XOR 0xAB and 0xAB
         let result = alu
             .evaluate(ALUOperation::BitwiseXor(
-                    RegisterValue::from(0xABu8),
-                    RegisterValue::from(0xABu8),
+                RegisterValue::from(0xABu8),
+                RegisterValue::from(0xABu8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x00u8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, false)
@@ -692,11 +695,11 @@ mod tests {
         // bitwise OR 0x55 and 0xAA
         let result = alu
             .evaluate(ALUOperation::BitwiseOr(
-                    RegisterValue::from(0x55u8),
-                    RegisterValue::from(0xAAu8),
+                RegisterValue::from(0x55u8),
+                RegisterValue::from(0xAAu8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0xFFu8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0xFFu8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, false, false)
@@ -705,11 +708,11 @@ mod tests {
         // bitwise OR 0x3A and 0x4A
         let result = alu
             .evaluate(ALUOperation::BitwiseOr(
-                    RegisterValue::from(0x3Au8),
-                    RegisterValue::from(0x4Au8),
+                RegisterValue::from(0x3Au8),
+                RegisterValue::from(0x4Au8),
             ))
             .unwrap();
-        assert_eq!(result, RegisterValue::from(0x7Au8));
+        assert_eq!(result.unwrap(), RegisterValue::from(0x7Au8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
