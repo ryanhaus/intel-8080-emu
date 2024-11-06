@@ -52,6 +52,7 @@ pub enum ALUOperation {
     BitwiseAnd(RegisterValue, RegisterValue),
     BitwiseXor(RegisterValue, RegisterValue),
     BitwiseOr(RegisterValue, RegisterValue),
+    Comparison(RegisterValue, RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -97,7 +98,8 @@ impl ALU {
             | SubBorrow(a, b)
             | BitwiseAnd(a, b)
             | BitwiseXor(a, b)
-            | BitwiseOr(a, b) => {
+            | BitwiseOr(a, b)
+            | Comparison(a, b) => {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
@@ -143,6 +145,10 @@ impl ALU {
             BitwiseAnd(_, _) => Some(self.bitwise_and(x.unwrap(), y.unwrap()).into()),
             BitwiseXor(_, _) => Some(self.bitwise_xor(x.unwrap(), y.unwrap()).into()),
             BitwiseOr(_, _) => Some(self.bitwise_or(x.unwrap(), y.unwrap()).into()),
+            Comparison(_, _) => {
+                self.sub(x.unwrap(), y.unwrap(), false);
+                None // comparison doesn't modify any registers
+            }
         };
 
         Ok(result)
@@ -716,6 +722,51 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_comparison() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for comparison
+        // compare 5 and 5
+        let result = alu
+            .evaluate(ALUOperation::Comparison(
+                RegisterValue::from(5u8),
+                RegisterValue::from(5u8),
+            ))
+            .unwrap();
+        assert_eq!(result, None);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(true, false, true, false, false)
+        );
+
+        // compare 6 and 5
+        let result = alu
+            .evaluate(ALUOperation::Comparison(
+                RegisterValue::from(6u8),
+                RegisterValue::from(5u8),
+            ))
+            .unwrap();
+        assert_eq!(result, None);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // compare 4 and 5
+        let result = alu
+            .evaluate(ALUOperation::Comparison(
+                RegisterValue::from(4u8),
+                RegisterValue::from(5u8),
+            ))
+            .unwrap();
+        assert_eq!(result, None);
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, true, true)
         );
     }
 }
