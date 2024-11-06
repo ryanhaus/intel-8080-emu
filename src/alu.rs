@@ -58,6 +58,8 @@ pub enum ALUOperation {
     RotateLeftThroughCarry(RegisterValue),
     RotateRightThroughCarry(RegisterValue),
     Complement(RegisterValue),
+    SetCarry,
+    ComplementCarry,
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -127,6 +129,8 @@ impl ALU {
                     }
                 }
             }
+
+            _ => {}
         }
 
         // perform the operation
@@ -166,6 +170,14 @@ impl ALU {
             RotateLeftThroughCarry(_) => Some(self.rotate(x.unwrap(), false, true).into()),
             RotateRightThroughCarry(_) => Some(self.rotate(x.unwrap(), true, true).into()),
             Complement(_) => Some(self.complement(x.unwrap()).into()),
+            SetCarry => {
+                self.flags.carry = true;
+                None
+            }
+            ComplementCarry => {
+                self.flags.carry = !self.flags.carry;
+                None
+            }
         };
 
         Ok(result)
@@ -1011,6 +1023,33 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // no flags should be updated
+        );
+    }
+
+    #[test]
+    fn alu_set_and_complement_carry() {
+        let mut alu = ALU::new();
+
+        // test out setting and complementing the carry flag
+        // set the carry
+        alu.evaluate(ALUOperation::SetCarry).unwrap();
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, true, false)
+        );
+
+        // complement the carry
+        alu.evaluate(ALUOperation::ComplementCarry).unwrap();
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // complement the carry again
+        alu.evaluate(ALUOperation::ComplementCarry).unwrap();
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, true, false)
         );
     }
 }
