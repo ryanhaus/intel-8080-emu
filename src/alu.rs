@@ -55,6 +55,8 @@ pub enum ALUOperation {
     Comparison(RegisterValue, RegisterValue),
     RotateLeft(RegisterValue),
     RotateRight(RegisterValue),
+    RotateLeftThroughCarry(RegisterValue),
+    RotateRightThroughCarry(RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -105,7 +107,13 @@ impl ALU {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
-            Increment(a) | Decrement(a) | DecimalAdjust(a) | RotateLeft(a) | RotateRight(a) => {
+            Increment(a)
+            | Decrement(a)
+            | DecimalAdjust(a)
+            | RotateLeft(a)
+            | RotateRight(a)
+            | RotateLeftThroughCarry(a)
+            | RotateRightThroughCarry(a) => {
                 use RegisterValue::*;
                 match a {
                     Integer8(_) => {
@@ -151,8 +159,10 @@ impl ALU {
                 self.sub(x.unwrap(), y.unwrap(), false);
                 None // comparison doesn't modify any registers
             }
-            RotateLeft(_) => Some(self.rotate(x.unwrap(), false).into()),
-            RotateRight(_) => Some(self.rotate(x.unwrap(), true).into()),
+            RotateLeft(_) => Some(self.rotate(x.unwrap(), false, false).into()),
+            RotateRight(_) => Some(self.rotate(x.unwrap(), true, false).into()),
+            RotateLeftThroughCarry(_) => Some(self.rotate(x.unwrap(), false, true).into()),
+            RotateRightThroughCarry(_) => Some(self.rotate(x.unwrap(), true, true).into()),
         };
 
         Ok(result)
@@ -301,18 +311,36 @@ impl ALU {
     }
 
     // performs a bit rotation (different from a shift) in either direction
-    fn rotate(&mut self, x: u8, right: bool) -> u8 {
-        let result = if right {
+    fn rotate(&mut self, x: u8, right: bool, through_carry: bool) -> u8 {
+        // store copy of current carry flag for rotation through carry
+        let carry_copy = self.flags.carry;
+
+        let mut result = if right {
             // carry flag becomes old LSB
             self.flags.carry = (x & 0x01) != 0;
 
+            // rotate
             x.rotate_right(1)
         } else {
             // carry flag becomes old MSB
             self.flags.carry = (x & 0x80) != 0;
 
+            // rotate
             x.rotate_left(1)
         };
+
+        // handle rotate through carry
+        if through_carry {
+            if right {
+                // if rotating right, new MSB becomes old carry
+                result &= 0b0111_1111; // clear MSB
+                result |= (carry_copy as u8) << 7; // set MSB to old carry
+            } else {
+                // if rotating left, new LSB becomes old carry
+                result &= 0b1111_1110; // clear LSB
+                result |= carry_copy as u8; // set LSB to old carry
+            }
+        }
 
         result
     }
@@ -851,6 +879,100 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(result, RegisterValue::from(0x55u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_rotate_left_through_carry() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for left rotation through carry
+        // ensure that 9 rotations will result in the same number
+        // rotate 1 left 9 times through carry
+        let mut result = RegisterValue::from(1u8);
+        for _ in 0..9 {
+            result = alu
+                .evaluate(ALUOperation::RotateLeftThroughCarry(result))
+                .unwrap()
+                .unwrap();
+        }
+        assert_eq!(result, RegisterValue::from(1u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // rotate 0xAA left through carry
+        let result = alu
+            .evaluate(ALUOperation::RotateLeftThroughCarry(RegisterValue::from(
+                0xAAu8,
+            )))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x54u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, true, false)
+        );
+
+        // rotate 0x54 left through carry
+        let result = alu
+            .evaluate(ALUOperation::RotateLeftThroughCarry(RegisterValue::from(
+                0x54u8,
+            )))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0xA9u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_rotate_right_through_carry() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for right rotation through carry
+        // ensure that 9 rotations will result in the same number
+        // rotate 1 right 9 times through carry
+        let mut result = RegisterValue::from(1u8);
+        for _ in 0..9 {
+            result = alu
+                .evaluate(ALUOperation::RotateRightThroughCarry(result))
+                .unwrap()
+                .unwrap();
+        }
+        assert_eq!(result, RegisterValue::from(1u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // rotate 0x55 right through carry
+        let result = alu
+            .evaluate(ALUOperation::RotateRightThroughCarry(RegisterValue::from(
+                0x55u8,
+            )))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x2Au8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, true, false)
+        );
+
+        // rotate 0x2A left through carry
+        let result = alu
+            .evaluate(ALUOperation::RotateRightThroughCarry(RegisterValue::from(
+                0x2Au8,
+            )))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x95u8));
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
