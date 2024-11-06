@@ -57,6 +57,7 @@ pub enum ALUOperation {
     RotateRight(RegisterValue),
     RotateLeftThroughCarry(RegisterValue),
     RotateRightThroughCarry(RegisterValue),
+    Complement(RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -113,7 +114,8 @@ impl ALU {
             | RotateLeft(a)
             | RotateRight(a)
             | RotateLeftThroughCarry(a)
-            | RotateRightThroughCarry(a) => {
+            | RotateRightThroughCarry(a)
+            | Complement(a) => {
                 use RegisterValue::*;
                 match a {
                     Integer8(_) => {
@@ -163,6 +165,7 @@ impl ALU {
             RotateRight(_) => Some(self.rotate(x.unwrap(), true, false).into()),
             RotateLeftThroughCarry(_) => Some(self.rotate(x.unwrap(), false, true).into()),
             RotateRightThroughCarry(_) => Some(self.rotate(x.unwrap(), true, true).into()),
+            Complement(_) => Some(self.complement(x.unwrap()).into()),
         };
 
         Ok(result)
@@ -343,6 +346,10 @@ impl ALU {
         }
 
         result
+    }
+
+    fn complement(&mut self, x: u8) -> u8 {
+        !x
     }
 }
 
@@ -976,6 +983,34 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_complement() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for complement (bitwise NOT)
+        // complement 0x55
+        let result = alu
+            .evaluate(ALUOperation::Complement(RegisterValue::from(0x55u8)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0xAAu8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // no flags should be updated
+        );
+
+        // complement 0xF0
+        let result = alu
+            .evaluate(ALUOperation::Complement(RegisterValue::from(0xF0u8)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x0Fu8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::new() // no flags should be updated
         );
     }
 }
