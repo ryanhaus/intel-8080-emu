@@ -48,6 +48,7 @@ pub enum ALUOperation {
     SubBorrow(RegisterValue, RegisterValue),
     Increment(RegisterValue),
     Decrement(RegisterValue),
+    DecimalAdjust(RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -91,7 +92,7 @@ impl ALU {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
-            Increment(a) | Decrement(a) => {
+            Increment(a) | Decrement(a) | DecimalAdjust(a) => {
                 use RegisterValue::*;
                 match a {
                     Integer8(_) => {
@@ -129,6 +130,7 @@ impl ALU {
                     return Err(String::from("Could not decrement: {x:?}"));
                 }
             }
+            DecimalAdjust(_) => self.decimal_adjust(x.unwrap()).into(),
         };
 
         Ok(result)
@@ -209,6 +211,32 @@ impl ALU {
         } else {
             x.wrapping_sub(1)
         }
+    }
+
+    // performs a 'decimal adjustment', i.e., an eight-bit number is "adjusted
+    // to form two four-bit Binary-Coded-Decimal digits"
+    fn decimal_adjust(&mut self, mut x: u8) -> u8 {
+        // per the datasheet, the adjustment process is as follows: (see pg. 4-8)
+        // 1. If the value of the least significant 4 bits of the [register] is
+        //    greater than 9 or if the [auxiliary carry] flag is set, 6 is
+        //    added to the [register].
+        // 2. If the value of the most significant 4 bits of the [register] is
+        //    now greater than 9, or if the [carry] flag is set, 6 is added to
+        //    the most significant 4 bits of the [register].
+
+        // step 1
+        let lower_bits = x & 0xF;
+        if lower_bits > 9 || self.flags.aux_carry {
+            x = self.add(x, 6, false);
+        }
+
+        // step 2
+        let higher_bits = (x & 0xF0) >> 4;
+        if higher_bits > 9 || self.flags.carry {
+            x = self.add(x, 0x60, false);
+        }
+
+        x
     }
 }
 
@@ -484,6 +512,63 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::new() // all flags should be 0
+        );
+    }
+
+    #[test]
+    fn decimal_adjustment() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for decimal adjustment
+        // add 0x5 and 0x3, then decimal adjust
+        let result = alu
+            .evaluate(
+                ALUOperation::Add(
+                    RegisterValue::from(0x5u8),
+                    RegisterValue::from(0x3u8)
+                )
+            ).unwrap();
+        let result = alu
+            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x8u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // add 0x15 and 0x27, then decimal adjust
+        let result = alu
+            .evaluate(
+                ALUOperation::Add(
+                    RegisterValue::from(0x15u8),
+                    RegisterValue::from(0x27u8)
+                )
+            ).unwrap();
+        let result = alu
+            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x42u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, true, false, true)
+        );
+
+        // add 0x99 and 0x01, then decimal adjust
+        let result = alu
+            .evaluate(
+                ALUOperation::Add(
+                    RegisterValue::from(0x99u8),
+                    RegisterValue::from(0x01u8)
+                )
+            ).unwrap();
+        let result = alu
+            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x00u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(true, false, true, true, false)
         );
     }
 }
