@@ -50,6 +50,7 @@ pub enum ALUOperation {
     Decrement(RegisterValue),
     DecimalAdjust(RegisterValue),
     BitwiseAnd(RegisterValue, RegisterValue),
+    BitwiseXor(RegisterValue, RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -89,7 +90,12 @@ impl ALU {
         let mut x16 = None;
 
         match operation {
-            Add(a, b) | AddCarry(a, b) | Sub(a, b) | SubBorrow(a, b) | BitwiseAnd(a, b) => {
+            Add(a, b)
+            | AddCarry(a, b)
+            | Sub(a, b)
+            | SubBorrow(a, b)
+            | BitwiseAnd(a, b)
+            | BitwiseXor(a, b) => {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
@@ -133,6 +139,7 @@ impl ALU {
             }
             DecimalAdjust(_) => self.decimal_adjust(x.unwrap()).into(),
             BitwiseAnd(_, _) => self.bitwise_and(x.unwrap(), y.unwrap()).into(),
+            BitwiseXor(_, _) => self.bitwise_xor(x.unwrap(), y.unwrap()).into(),
         };
 
         Ok(result)
@@ -244,6 +251,19 @@ impl ALU {
     // performs a logical bitwise AND between two numbers
     fn bitwise_and(&mut self, x: u8, y: u8) -> u8 {
         let result = x & y;
+
+        self.flags.zero = (result == 0);
+        self.flags.sign = (result & 0x80 != 0);
+        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.carry = false;
+        self.flags.aux_carry = false;
+
+        result
+    }
+
+    // performs a logical bitwise XOR between two numbers
+    fn bitwise_xor(&mut self, x: u8, y: u8) -> u8 {
+        let result = x ^ y;
 
         self.flags.zero = (result == 0);
         self.flags.sign = (result & 0x80 != 0);
@@ -607,6 +627,38 @@ mod tests {
             .evaluate(ALUOperation::BitwiseAnd(
                 RegisterValue::from(0xFFu8),
                 RegisterValue::from(0x00u8),
+            ))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x00u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(true, false, true, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_bitwise_xor() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for bitwise XOR
+        // bitwise XOR 0x55 and 0xFF
+        let result = alu
+            .evaluate(ALUOperation::BitwiseXor(
+                    RegisterValue::from(0x55u8),
+                    RegisterValue::from(0xFFu8),
+            ))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0xAAu8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, false, false)
+        );
+
+        // bitwise XOR 0xAB and 0xAB
+        let result = alu
+            .evaluate(ALUOperation::BitwiseXor(
+                    RegisterValue::from(0xABu8),
+                    RegisterValue::from(0xABu8),
             ))
             .unwrap();
         assert_eq!(result, RegisterValue::from(0x00u8));
