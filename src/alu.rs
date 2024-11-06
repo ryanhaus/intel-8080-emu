@@ -565,7 +565,7 @@ mod tests {
         assert_eq!(result, RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, true, true)
+            ALUFlags::from_bools(true, false, true, true, false)
         );
     }
 }
