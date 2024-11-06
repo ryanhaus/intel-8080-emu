@@ -51,6 +51,7 @@ pub enum ALUOperation {
     DecimalAdjust(RegisterValue),
     BitwiseAnd(RegisterValue, RegisterValue),
     BitwiseXor(RegisterValue, RegisterValue),
+    BitwiseOr(RegisterValue, RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -95,7 +96,8 @@ impl ALU {
             | Sub(a, b)
             | SubBorrow(a, b)
             | BitwiseAnd(a, b)
-            | BitwiseXor(a, b) => {
+            | BitwiseXor(a, b)
+            | BitwiseOr(a, b) => {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
@@ -140,6 +142,7 @@ impl ALU {
             DecimalAdjust(_) => self.decimal_adjust(x.unwrap()).into(),
             BitwiseAnd(_, _) => self.bitwise_and(x.unwrap(), y.unwrap()).into(),
             BitwiseXor(_, _) => self.bitwise_xor(x.unwrap(), y.unwrap()).into(),
+            BitwiseOr(_, _) => self.bitwise_or(x.unwrap(), y.unwrap()).into(),
         };
 
         Ok(result)
@@ -264,6 +267,19 @@ impl ALU {
     // performs a logical bitwise XOR between two numbers
     fn bitwise_xor(&mut self, x: u8, y: u8) -> u8 {
         let result = x ^ y;
+
+        self.flags.zero = (result == 0);
+        self.flags.sign = (result & 0x80 != 0);
+        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.carry = false;
+        self.flags.aux_carry = false;
+
+        result
+    }
+
+    // performs a logical bitwise OR between two numbers
+    fn bitwise_or(&mut self, x: u8, y: u8) -> u8 {
+        let result = x | y;
 
         self.flags.zero = (result == 0);
         self.flags.sign = (result & 0x80 != 0);
@@ -665,6 +681,38 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(true, false, true, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_bitwise_or() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for bitwise OR
+        // bitwise OR 0x55 and 0xAA
+        let result = alu
+            .evaluate(ALUOperation::BitwiseOr(
+                    RegisterValue::from(0x55u8),
+                    RegisterValue::from(0xAAu8),
+            ))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0xFFu8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, true, true, false, false)
+        );
+
+        // bitwise OR 0x3A and 0x4A
+        let result = alu
+            .evaluate(ALUOperation::BitwiseOr(
+                    RegisterValue::from(0x3Au8),
+                    RegisterValue::from(0x4Au8),
+            ))
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x7Au8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
         );
     }
 }
