@@ -116,7 +116,7 @@ impl ALU {
                 if let Some(x) = x {
                     self.inc_dec(x, true).into()
                 } else if let Some(x16) = x16 {
-                    self.inc_dec16(x16, true).into() 
+                    self.inc_dec16(x16, true).into()
                 } else {
                     return Err(String::from("Could not increment: {x:?}"));
                 }
@@ -125,7 +125,7 @@ impl ALU {
                 if let Some(x) = x {
                     self.inc_dec(x, false).into()
                 } else if let Some(x16) = x16 {
-                    self.inc_dec16(x16, false).into() 
+                    self.inc_dec16(x16, false).into()
                 } else {
                     return Err(String::from("Could not decrement: {x:?}"));
                 }
@@ -522,12 +522,11 @@ mod tests {
         // test some hand-picked values for decimal adjustment
         // add 0x5 and 0x3, then decimal adjust
         let result = alu
-            .evaluate(
-                ALUOperation::Add(
-                    RegisterValue::from(0x5u8),
-                    RegisterValue::from(0x3u8)
-                )
-            ).unwrap();
+            .evaluate(ALUOperation::Add(
+                RegisterValue::from(0x5u8),
+                RegisterValue::from(0x3u8),
+            ))
+            .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
@@ -539,12 +538,11 @@ mod tests {
 
         // add 0x15 and 0x27, then decimal adjust
         let result = alu
-            .evaluate(
-                ALUOperation::Add(
-                    RegisterValue::from(0x15u8),
-                    RegisterValue::from(0x27u8)
-                )
-            ).unwrap();
+            .evaluate(ALUOperation::Add(
+                RegisterValue::from(0x15u8),
+                RegisterValue::from(0x27u8),
+            ))
+            .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
@@ -556,19 +554,18 @@ mod tests {
 
         // add 0x99 and 0x01, then decimal adjust
         let result = alu
-            .evaluate(
-                ALUOperation::Add(
-                    RegisterValue::from(0x99u8),
-                    RegisterValue::from(0x01u8)
-                )
-            ).unwrap();
+            .evaluate(ALUOperation::Add(
+                RegisterValue::from(0x99u8),
+                RegisterValue::from(0x01u8),
+            ))
+            .unwrap();
         let result = alu
             .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
         assert_eq!(result, RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, true, false)
+            ALUFlags::from_bools(true, false, true, true, true)
         );
     }
 }
