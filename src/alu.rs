@@ -53,6 +53,8 @@ pub enum ALUOperation {
     BitwiseXor(RegisterValue, RegisterValue),
     BitwiseOr(RegisterValue, RegisterValue),
     Comparison(RegisterValue, RegisterValue),
+    RotateLeft(RegisterValue),
+    RotateRight(RegisterValue),
 }
 
 // ALU struct - holds the registers inside of the alu, has functions that
@@ -103,7 +105,7 @@ impl ALU {
                 x = Some(a.try_into()?);
                 y = Some(b.try_into()?);
             }
-            Increment(a) | Decrement(a) | DecimalAdjust(a) => {
+            Increment(a) | Decrement(a) | DecimalAdjust(a) | RotateLeft(a) | RotateRight(a) => {
                 use RegisterValue::*;
                 match a {
                     Integer8(_) => {
@@ -149,6 +151,8 @@ impl ALU {
                 self.sub(x.unwrap(), y.unwrap(), false);
                 None // comparison doesn't modify any registers
             }
+            RotateLeft(_) => Some(self.rotate(x.unwrap(), false).into()),
+            RotateRight(_) => Some(self.rotate(x.unwrap(), true).into()),
         };
 
         Ok(result)
@@ -292,6 +296,23 @@ impl ALU {
         self.flags.parity = (result.count_ones() % 2 == 0);
         self.flags.carry = false;
         self.flags.aux_carry = false;
+
+        result
+    }
+
+    // performs a bit rotation (different from a shift) in either direction
+    fn rotate(&mut self, x: u8, right: bool) -> u8 {
+        let result = if right {
+            // carry flag becomes old LSB
+            self.flags.carry = (x & 0x01) != 0;
+
+            x.rotate_right(1)
+        } else {
+            // carry flag becomes old MSB
+            self.flags.carry = (x & 0x80) != 0;
+
+            x.rotate_left(1)
+        };
 
         result
     }
@@ -767,6 +788,72 @@ mod tests {
         assert_eq!(
             alu.flags(),
             ALUFlags::from_bools(false, true, true, true, true)
+        );
+    }
+
+    #[test]
+    fn alu_rotate_left() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for left rotation
+        // ensure that 8 rotations will result in the original number
+        // rotate 1 left 8 times
+        let mut result = RegisterValue::from(1u8);
+        for _ in 0..8 {
+            result = alu
+                .evaluate(ALUOperation::RotateLeft(result))
+                .unwrap()
+                .unwrap();
+        }
+        assert_eq!(result, RegisterValue::from(1u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, true, false)
+        );
+
+        // rotate 0x55 left once
+        let result = alu
+            .evaluate(ALUOperation::RotateLeft(RegisterValue::from(0x55u8)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0xAAu8));
+        assert_eq!(
+            alu.flags(),
+            // even though the sign bit is 1 and the parity is even, only
+            // the carry flag is modified during a rotation
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+    }
+
+    #[test]
+    fn alu_rotate_right() {
+        let mut alu = ALU::new();
+
+        // test some hand-picked values for right rotation
+        // ensure that 8 rotations will result in the original number
+        // rotate 1 right 8 times
+        let mut result = RegisterValue::from(1u8);
+        for _ in 0..8 {
+            result = alu
+                .evaluate(ALUOperation::RotateRight(result))
+                .unwrap()
+                .unwrap();
+        }
+        assert_eq!(result, RegisterValue::from(1u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
+        );
+
+        // rotate 0xAA right once
+        let result = alu
+            .evaluate(ALUOperation::RotateRight(RegisterValue::from(0xAAu8)))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result, RegisterValue::from(0x55u8));
+        assert_eq!(
+            alu.flags(),
+            ALUFlags::from_bools(false, false, false, false, false)
         );
     }
 }
