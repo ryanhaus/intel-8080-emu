@@ -11,9 +11,7 @@ pub struct Memory {
 impl Memory {
     // creates a new empty instance of Memory
     pub fn new() -> Self {
-        Self {
-            data: [0; 0x10000],
-        }
+        Self { data: [0; 0x10000] }
     }
 
     // gets a value at a certain memory address
@@ -54,10 +52,7 @@ mod tests {
         }
 
         for i in 0..0x10000 {
-            assert_eq!(
-                written_values[i],
-                memory.read(i as u16)
-            );
+            assert_eq!(written_values[i], memory.read(i as u16));
         }
     }
 }

@@ -4,17 +4,18 @@
  */
 
 pub mod alu;
-pub mod registers;
 pub mod memory;
+pub mod registers;
 
 use alu::*;
-use registers::*;
 use memory::*;
+use registers::*;
 
 // CPU struct - holds all components of the CPU and has I/O functions
 pub struct CPU {
     reg_array: RegisterArray,
     alu: ALU,
+    memory: Memory,
 }
 
 impl CPU {
@@ -23,6 +24,7 @@ impl CPU {
         Self {
             reg_array: RegisterArray::new(),
             alu: ALU::new(),
+            memory: Memory::new(),
         }
     }
 
