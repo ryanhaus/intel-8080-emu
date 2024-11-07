@@ -5,9 +5,11 @@
 
 pub mod alu;
 pub mod registers;
+pub mod memory;
 
 use alu::*;
 use registers::*;
+use memory::*;
 
 // CPU struct - holds all components of the CPU and has I/O functions
 pub struct CPU {
