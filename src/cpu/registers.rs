@@ -72,6 +72,8 @@ impl RegisterArray {
         use Register::*;
 
         match register {
+            PC => self.program_counter = value.into(),
+            SP => self.stack_pointer = value.into(),
             B => self.reg_b = value.try_into()?,
             C => self.reg_c = value.try_into()?,
             D => self.reg_d = value.try_into()?,
@@ -84,14 +86,6 @@ impl RegisterArray {
             DE => (self.reg_d, self.reg_e) = separate_values(value.into()),
             HL => (self.reg_h, self.reg_l) = separate_values(value.into()),
             WZ => (self.reg_w, self.reg_z) = separate_values(value.into()),
-
-            // unsupported register: throw an error
-            _ => {
-                return Err(format!(
-                    "Cannot write to {}",
-                    register.get_human_readable_name()
-                ))
-            }
         };
 
         // if this point is reached, write was successful
@@ -247,9 +241,9 @@ mod tests {
 
         // generate random values for each of the 6 16-bit registers
         let rand_values: [u16; 6] = rand::random();
-        let registers_16 = [BC, DE, HL, WZ];
+        let registers_16 = [PC, SP, BC, DE, HL, WZ];
 
-        // write the 8 values
+        // write the 6 values
         registers_16
             .iter()
             .zip(rand_values.iter())
@@ -259,7 +253,7 @@ mod tests {
                     .unwrap()
             });
 
-        // read back the 8 values, ensure they are equal to what was written
+        // read back the 6 values, ensure they are equal to what was written
         registers_16
             .iter()
             .zip(rand_values.iter())
