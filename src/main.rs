@@ -1,4 +1,6 @@
-mod alu;
-mod registers;
+mod cpu;
+use cpu::*;
 
-fn main() {}
+fn main() {
+    let mut cpu = CPU::new();
+}
