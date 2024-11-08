@@ -65,21 +65,22 @@ pub enum AluOperation {
 // Alu struct - holds the registers inside of the ALU, has functions that
 // perform ALU operations
 pub struct Alu {
-    accumulator: u8,           // 8-bit accumulator register
-    temporary_accumulator: u8, // 8-bit temporary accumulator register
-    flags: AluFlags,           // 5-bit flags register
-    temporary_register: u8,    // 8-bit temporary register
+    accumulator: RegisterValue, // 8-bit accumulator register
+    flags: AluFlags,            // 5-bit flags register
 }
 
 impl Alu {
     // creates a new empty instance of Alu
     pub fn new() -> Self {
         Self {
-            accumulator: 0,
-            temporary_accumulator: 0,
+            accumulator: RegisterValue::from(0u8),
             flags: AluFlags::new(),
-            temporary_register: 0,
         }
+    }
+
+    // returns the value of the accumulator register
+    pub fn accumulator(&self) -> RegisterValue {
+        self.accumulator
     }
 
     // returns the flags of the alu
@@ -179,6 +180,11 @@ impl Alu {
                 None
             }
         };
+
+        // set the accumulator register (if applicable), return result
+        if let Some(result) = result {
+            self.accumulator = result;
+        }
 
         Ok(result)
     }
@@ -368,6 +374,22 @@ impl Alu {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn alu_accumulator_is_set() {
+        let mut alu = Alu::new();
+
+        // add 1+1, ensure accumulator AND return value value are 2
+        let result = alu
+            .evaluate(AluOperation::Add(
+                RegisterValue::from(1u8),
+                RegisterValue::from(1u8),
+            ))
+            .unwrap();
+
+        assert_eq!(result.unwrap(), RegisterValue::from(2u8));
+        assert_eq!(alu.accumulator(), RegisterValue::from(2u8));
+    }
 
     #[test]
     fn alu_add() {

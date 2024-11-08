@@ -104,6 +104,9 @@ impl Cpu {
 
             // if the source value is contained in a register
             Register(register) => Ok(self.reg_array.read_reg(register)),
+
+            // if the source is contained in the accumulator (A register)
+            Accumulator => Ok(self.alu.accumulator()),
         }
     }
 }
@@ -122,6 +125,7 @@ enum MemorySource {
 enum InstructionSource {
     Memory(MemorySource),
     Register(Register),
+    Accumulator,
 }
 
 // Instruction enum - represents a single instruction and all data required
@@ -222,5 +226,19 @@ mod tests {
             )))
             .unwrap();
         assert_eq!(value, RegisterValue::from(0x1234u16));
+
+        // perform a dummy ALU operation and make sure the Accumulator is resolved
+        // to the correct value
+        cpu.alu
+            .evaluate(AluOperation::Add(
+                RegisterValue::from(1u8),
+                RegisterValue::from(2u8),
+            ))
+            .unwrap()
+            .unwrap();
+
+        let value = cpu.evaluate_source(InstructionSource::Accumulator).unwrap();
+
+        assert_eq!(value, RegisterValue::from(3u8));
     }
 }
