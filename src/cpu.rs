@@ -4,11 +4,13 @@
  */
 
 pub mod alu;
+pub mod instruction;
 pub mod memory;
 pub mod registers;
 mod utils;
 
 use alu::*;
+use instruction::*;
 use memory::*;
 use registers::*;
 
@@ -51,28 +53,7 @@ impl Cpu {
     // decodes the instruction at the current program counter into an Instruction enum
     fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
         let instruction = self.read_next(MemorySize::Integer8)?;
-        Cpu::decode_instruction(instruction)
-    }
-
-    // decodes a given instruction as a RegisterValue into an Instruction enum
-    fn decode_instruction(instruction: RegisterValue) -> Result<Instruction, String> {
-        // convert the instruction into an array of bits for the match
-        let instruction: u8 = instruction.try_into()?;
-        let instruction_bits = utils::get_bits(instruction);
-
-        // find helpful selection values
-        let rp = (instruction & 0b0011_0000) >> 4; // instruction[5:4]
-        let ddd = (instruction & 0b0011_1000) >> 3; // instruction[5:3]
-        let (alu, cc, n) = (ddd, ddd, ddd); // instruction[5:3]
-        let sss = instruction & 0b0000_0111; // instruction[2:0]
-
-        // determine what the instruction is
-        match instruction_bits {
-            [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::Nop),
-            _ => Err(String::from(
-                "Unknown/unsupported instruction: {instruction}",
-            )),
-        }
+        Instruction::decode(instruction)
     }
 
     // evaluates the value of a InstructionSource into a RegisterValue
@@ -109,45 +90,6 @@ impl Cpu {
             Accumulator => Ok(self.alu.accumulator()),
         }
     }
-}
-
-// MemorySource enum - represents a source of something in memory
-#[derive(Debug, PartialEq)]
-enum MemorySource {
-    Address(RegisterValue),
-    Register(Register),
-    ProgramCounter,
-}
-
-// InstructionSource enum - represents the source of data to be passed to an
-// instruction, will be converted into a RegisterValue during execution
-#[derive(Debug, PartialEq)]
-enum InstructionSource {
-    Memory(MemorySource, MemorySize),
-    Register(Register),
-    Accumulator,
-}
-
-impl InstructionSource {
-    // returns an InstructionSource based on its ID
-    pub fn from_id(id: u8) -> Result<Self, String> {
-        match id {
-            0b000..=0b101 => Ok(InstructionSource::Register(Register::from_reg_id(id)?)),
-            0b110 => Ok(InstructionSource::Memory(
-                MemorySource::ProgramCounter,
-                MemorySize::Integer8,
-            )),
-            0b111 => Ok(InstructionSource::Accumulator),
-            _ => Err(format!("Unknown InstructionSource ID: {id}")),
-        }
-    }
-}
-
-// Instruction enum - represents a single instruction and all data required
-// to execute it
-#[derive(Debug, PartialEq)]
-enum Instruction {
-    Nop,
 }
 
 #[cfg(test)]
