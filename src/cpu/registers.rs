@@ -3,6 +3,7 @@
  * see Intel 8080 datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
 
+use super::utils;
 use std::{
     convert::{From, TryFrom},
     error::Error,
@@ -88,10 +89,10 @@ impl RegisterArray {
             L => self.reg_l = value.try_into()?,
             W => self.reg_w = value.try_into()?,
             Z => self.reg_z = value.try_into()?,
-            BC => (self.reg_b, self.reg_c) = separate_values(value.into()),
-            DE => (self.reg_d, self.reg_e) = separate_values(value.into()),
-            HL => (self.reg_h, self.reg_l) = separate_values(value.into()),
-            WZ => (self.reg_w, self.reg_z) = separate_values(value.into()),
+            BC => (self.reg_b, self.reg_c) = utils::separate_values(value.into()),
+            DE => (self.reg_d, self.reg_e) = utils::separate_values(value.into()),
+            HL => (self.reg_h, self.reg_l) = utils::separate_values(value.into()),
+            WZ => (self.reg_w, self.reg_z) = utils::separate_values(value.into()),
         };
 
         // if this point is reached, write was successful
@@ -205,31 +206,10 @@ impl From<RegisterValue> for u16 {
 
         match reg_val {
             Integer8(value) => value as u16,
-            Integer8Pair(higher, lower) => combine_values(higher, lower),
+            Integer8Pair(higher, lower) => utils::combine_values(higher, lower),
             Integer16(value) => value,
         }
     }
-}
-
-// Helper function that combines two 8-bit values together to make a single
-// 16-bit value, primarily used for making register pairs out of two
-// registers. The first parameter will be the 'higher' register, and the
-// second parameter is the 'lower' register, i.e., (B, C) -> BC.
-fn combine_values(higher: u8, lower: u8) -> u16 {
-    let (higher, lower) = (higher as u16, lower as u16);
-
-    (higher << 8) + lower
-}
-
-// Helper function that is essentially the inverse of the above combine_values,
-// takes in a 16-bit value and returns a tuple with two 8-bit values. The first
-// value in the tuple is the 'higher' value, and the second value is the 'lower'
-// value.
-fn separate_values(value: u16) -> (u8, u8) {
-    let higher = ((value >> 8) & 0xFF) as u8;
-    let lower = (value & 0xFF) as u8;
-
-    (higher, lower)
 }
 
 // tests

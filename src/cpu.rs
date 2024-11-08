@@ -6,6 +6,7 @@
 pub mod alu;
 pub mod memory;
 pub mod registers;
+mod utils;
 
 use alu::*;
 use memory::*;
@@ -57,7 +58,7 @@ impl CPU {
     fn decode_instruction(instruction: RegisterValue) -> Result<Instruction, String> {
         // convert the instruction into an array of bits for the match
         let instruction: u8 = instruction.try_into()?;
-        let instruction_bits = get_bits(instruction);
+        let instruction_bits = utils::get_bits(instruction);
 
         // find helpful selection values
         let rp = (instruction & 0b0011_0000) >> 4; // instruction[5:4]
@@ -73,17 +74,6 @@ impl CPU {
             )),
         }
     }
-}
-
-// helper function to return an array of all bits in a u8, with [0] being the MSB
-fn get_bits(x: u8) -> [u8; 8] {
-    let mut bits = [0u8; 8];
-
-    for i in 0..8 {
-        bits[7 - i] = (x >> i) & 1;
-    }
-
-    bits
 }
 
 // MemorySource enum - represents a source of something in memory
