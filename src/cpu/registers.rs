@@ -100,7 +100,7 @@ impl RegisterArray {
 }
 
 // Register enum - contains all possible registers that can be referenced
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Register {
     PC, // 16-bit program counter
     SP, // 16-bit stack pointer

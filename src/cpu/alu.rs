@@ -40,7 +40,7 @@ impl ALUFlags {
 
 // ALUOperation - what operation the ALU should perform, as well as the data
 // to be used in the operation
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ALUOperation {
     Add(RegisterValue, RegisterValue),
     AddCarry(RegisterValue, RegisterValue),

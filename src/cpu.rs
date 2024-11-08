@@ -48,15 +48,65 @@ impl CPU {
     }
 
     // decodes the instruction at the current program counter into an Instruction enum
-    fn decode_next_instruction(&self) -> Instruction {
-        todo!()
+    fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
+        let instruction = self.read_next(false)?;
+        CPU::decode_instruction(instruction)
     }
+
+    // decodes a given instruction as a RegisterValue into an Instruction enum
+    fn decode_instruction(instruction: RegisterValue) -> Result<Instruction, String> {
+        // convert the instruction into an array of bits for the match
+        let instruction: u8 = instruction.try_into()?;
+        let instruction_bits = get_bits(instruction);
+
+        // find helpful selection values
+        let rp = (instruction & 0b0011_0000) >> 4; // instruction[5:4]
+        let ddd = (instruction & 0b0011_1000) >> 3; // instruction[5:3]
+        let (alu, cc, n) = (ddd, ddd, ddd); // instruction[5:3]
+        let sss = instruction & 0b0000_0111; // instruction[2:0]
+
+        // determine what the instruction is
+        match instruction_bits {
+            [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::NOP),
+            _ => Err(String::from(
+                "Unknown/unsupported instruction: {instruction}",
+            )),
+        }
+    }
+}
+
+// helper function to return an array of all bits in a u8, with [0] being the MSB
+fn get_bits(x: u8) -> [u8; 8] {
+    let mut bits = [0u8; 8];
+
+    for i in 0..8 {
+        bits[7 - i] = (x >> i) & 1;
+    }
+
+    bits
+}
+
+// MemorySource enum - represents a source of something in memory
+#[derive(Debug, PartialEq)]
+enum MemorySource {
+    Address(RegisterValue),
+    Register(Register),
+    ProgramCounter,
+}
+
+// InstructionSource enum - represents the source of data to be passed to an
+// instruction, will be converted into a RegisterValue during execution
+#[derive(Debug, PartialEq)]
+enum InstructionSource {
+    Memory(MemorySource),
+    Register(Register),
 }
 
 // Instruction enum - represents a single instruction and all data required
 // to execute it
+#[derive(Debug, PartialEq)]
 enum Instruction {
-    ALUInstruction(ALUOperation),
+    NOP,
 }
 
 #[cfg(test)]
