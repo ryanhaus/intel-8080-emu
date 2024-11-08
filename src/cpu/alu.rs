@@ -4,9 +4,9 @@
  */
 use super::registers::RegisterValue;
 
-// ALUFlags struct - holds the 5 ALU flags
+// AluFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ALUFlags {
+pub struct AluFlags {
     zero: bool,
     sign: bool,
     parity: bool, // even parity
@@ -14,8 +14,8 @@ pub struct ALUFlags {
     aux_carry: bool, // aka half carry
 }
 
-impl ALUFlags {
-    // creates a new instance of ALUFlags with all values defaulting to false
+impl AluFlags {
+    // creates a new instance of AluFlags with all values defaulting to false
     pub fn new() -> Self {
         Self {
             zero: false,
@@ -26,7 +26,7 @@ impl ALUFlags {
         }
     }
 
-    // creates a new instance of ALUFlags with given flag values
+    // creates a new instance of AluFlags with given flag values
     pub fn from_bools(zero: bool, sign: bool, parity: bool, carry: bool, aux_carry: bool) -> Self {
         Self {
             zero,
@@ -38,10 +38,10 @@ impl ALUFlags {
     }
 }
 
-// ALUOperation - what operation the ALU should perform, as well as the data
+// AluOperation - what operation the Alu should perform, as well as the data
 // to be used in the operation
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ALUOperation {
+pub enum AluOperation {
     Add(RegisterValue, RegisterValue),
     AddCarry(RegisterValue, RegisterValue),
     Sub(RegisterValue, RegisterValue),
@@ -62,37 +62,37 @@ pub enum ALUOperation {
     ComplementCarry,
 }
 
-// ALU struct - holds the registers inside of the alu, has functions that
+// Alu struct - holds the registers inside of the ALU, has functions that
 // perform ALU operations
-pub struct ALU {
+pub struct Alu {
     accumulator: u8,           // 8-bit accumulator register
     temporary_accumulator: u8, // 8-bit temporary accumulator register
-    flags: ALUFlags,           // 5-bit flags register
+    flags: AluFlags,           // 5-bit flags register
     temporary_register: u8,    // 8-bit temporary register
 }
 
-impl ALU {
-    // creates a new empty instance of ALU
+impl Alu {
+    // creates a new empty instance of Alu
     pub fn new() -> Self {
         Self {
             accumulator: 0,
             temporary_accumulator: 0,
-            flags: ALUFlags::new(),
+            flags: AluFlags::new(),
             temporary_register: 0,
         }
     }
 
     // returns the flags of the alu
-    pub fn flags(&self) -> ALUFlags {
+    pub fn flags(&self) -> AluFlags {
         self.flags
     }
 
-    // evaluates a given ALUOperation, updates flags & internal registers,
+    // evaluates a given AluOperation, updates flags & internal registers,
     // and returns the result
-    pub fn evaluate(&mut self, operation: ALUOperation) -> Result<Option<RegisterValue>, String> {
-        use ALUOperation::*;
+    pub fn evaluate(&mut self, operation: AluOperation) -> Result<Option<RegisterValue>, String> {
+        use AluOperation::*;
 
-        // convert the arguments in the ALUOperation from RegisterValues
+        // convert the arguments in the AluOperation from RegisterValues
         // to u8, u16, depending on what the operation is
         let mut x = None;
         let mut y = None;
@@ -371,12 +371,12 @@ mod tests {
 
     #[test]
     fn alu_add() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for adding
         // 0 + 0
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(0u8),
                 RegisterValue::from(0u8),
             ))
@@ -384,12 +384,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, false, false)
+            AluFlags::from_bools(true, false, true, false, false)
         );
 
         // 13 + 7
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(13u8),
                 RegisterValue::from(7u8),
             ))
@@ -397,12 +397,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(20u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, true, false, true)
+            AluFlags::from_bools(false, false, true, false, true)
         );
 
         // 255 + 2 (carry occurs)
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(255u8),
                 RegisterValue::from(2u8),
             ))
@@ -410,12 +410,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, true)
+            AluFlags::from_bools(false, false, false, true, true)
         );
 
         // 127 + 1
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(127u8),
                 RegisterValue::from(1u8),
             ))
@@ -423,18 +423,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(128u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, false, false, true)
+            AluFlags::from_bools(false, true, false, false, true)
         );
     }
 
     #[test]
     fn alu_add_with_carry() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for adding with carry
         // 240 + 16
         let result = alu
-            .evaluate(ALUOperation::AddCarry(
+            .evaluate(AluOperation::AddCarry(
                 RegisterValue::from(240u8),
                 RegisterValue::from(16u8),
             ))
@@ -442,12 +442,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, true, false)
+            AluFlags::from_bools(true, false, true, true, false)
         );
 
         // 1 + 1 (should also add the carry flag to make 3)
         let result = alu
-            .evaluate(ALUOperation::AddCarry(
+            .evaluate(AluOperation::AddCarry(
                 RegisterValue::from(1u8),
                 RegisterValue::from(1u8),
             ))
@@ -455,18 +455,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(3u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, true, false, false)
+            AluFlags::from_bools(false, false, true, false, false)
         );
     }
 
     #[test]
     fn alu_sub() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for subtraction
         // 7 - 3
         let result = alu
-            .evaluate(ALUOperation::Sub(
+            .evaluate(AluOperation::Sub(
                 RegisterValue::from(7u8),
                 RegisterValue::from(3u8),
             ))
@@ -474,12 +474,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(4u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // 12 - 24
         let result = alu
-            .evaluate(ALUOperation::Sub(
+            .evaluate(AluOperation::Sub(
                 RegisterValue::from(12u8),
                 RegisterValue::from(24u8),
             ))
@@ -487,12 +487,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(12u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, false, true, false)
+            AluFlags::from_bools(false, true, false, true, false)
         );
 
         // 1 - 2
         let result = alu
-            .evaluate(ALUOperation::Sub(
+            .evaluate(AluOperation::Sub(
                 RegisterValue::from(1u8),
                 RegisterValue::from(2u8),
             ))
@@ -500,18 +500,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, true, true)
+            AluFlags::from_bools(false, true, true, true, true)
         );
     }
 
     #[test]
     fn alu_sub_with_borrow() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for subtraction with carry
         // 1 - 2
         let result = alu
-            .evaluate(ALUOperation::SubBorrow(
+            .evaluate(AluOperation::SubBorrow(
                 RegisterValue::from(1u8),
                 RegisterValue::from(2u8),
             ))
@@ -519,12 +519,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(1u8.wrapping_neg()));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, true, true)
+            AluFlags::from_bools(false, true, true, true, true)
         );
 
         // 100 - 49 (should also include borrow to make 50)
         let result = alu
-            .evaluate(ALUOperation::SubBorrow(
+            .evaluate(AluOperation::SubBorrow(
                 RegisterValue::from(100u8),
                 RegisterValue::from(49u8),
             ))
@@ -532,179 +532,179 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(50u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_increment() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for increment
         // increment 15
         let result = alu
-            .evaluate(ALUOperation::Increment(RegisterValue::from(15u8)))
+            .evaluate(AluOperation::Increment(RegisterValue::from(15u8)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(16u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, true)
+            AluFlags::from_bools(false, false, false, false, true)
         );
 
         // increment 255 (overflow, but carry flag should NOT be updated)
         let result = alu
-            .evaluate(ALUOperation::Increment(RegisterValue::from(255u8)))
+            .evaluate(AluOperation::Increment(RegisterValue::from(255u8)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(0u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, false, true)
+            AluFlags::from_bools(true, false, true, false, true)
         );
     }
 
     #[test]
     fn alu_decrement() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for decrement
         // decrement 16
         let result = alu
-            .evaluate(ALUOperation::Decrement(RegisterValue::from(16u8)))
+            .evaluate(AluOperation::Decrement(RegisterValue::from(16u8)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(15u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, true, false, true)
+            AluFlags::from_bools(false, false, true, false, true)
         );
 
         // decrement 0 (overflow)
         let result = alu
-            .evaluate(ALUOperation::Decrement(RegisterValue::from(0u8)))
+            .evaluate(AluOperation::Decrement(RegisterValue::from(0u8)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(255u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, false, true)
+            AluFlags::from_bools(false, true, true, false, true)
         );
     }
 
     #[test]
     fn alu_increment_16bit() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for 16-bit increment
         // increment 255
         let result = alu
-            .evaluate(ALUOperation::Increment(RegisterValue::from(255u16)))
+            .evaluate(AluOperation::Increment(RegisterValue::from(255u16)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(256u16));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // all flags should be 0
+            AluFlags::new() // all flags should be 0
         );
 
         // increment 65535 (overflow)
         let result = alu
-            .evaluate(ALUOperation::Increment(RegisterValue::from(65535u16)))
+            .evaluate(AluOperation::Increment(RegisterValue::from(65535u16)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(0u16));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // all flags should be 0
+            AluFlags::new() // all flags should be 0
         );
     }
 
     #[test]
     fn alu_decrement_16bit() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for 16-bit decrement
         // decrement 256
         let result = alu
-            .evaluate(ALUOperation::Decrement(RegisterValue::from(256u16)))
+            .evaluate(AluOperation::Decrement(RegisterValue::from(256u16)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(255u16));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // all flags should be 0
+            AluFlags::new() // all flags should be 0
         );
 
         // decrement 0 (overflow)
         let result = alu
-            .evaluate(ALUOperation::Decrement(RegisterValue::from(0u16)))
+            .evaluate(AluOperation::Decrement(RegisterValue::from(0u16)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(65535u16));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // all flags should be 0
+            AluFlags::new() // all flags should be 0
         );
     }
 
     #[test]
     fn alu_decimal_adjustment() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for decimal adjustment
         // add 0x5 and 0x3, then decimal adjust
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(0x5u8),
                 RegisterValue::from(0x3u8),
             ))
             .unwrap()
             .unwrap();
         let result = alu
-            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .evaluate(AluOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(0x8u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // add 0x15 and 0x27, then decimal adjust
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(0x15u8),
                 RegisterValue::from(0x27u8),
             ))
             .unwrap()
             .unwrap();
         let result = alu
-            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .evaluate(AluOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(0x42u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, true, false, true)
+            AluFlags::from_bools(false, false, true, false, true)
         );
 
         // add 0x99 and 0x01, then decimal adjust
         let result = alu
-            .evaluate(ALUOperation::Add(
+            .evaluate(AluOperation::Add(
                 RegisterValue::from(0x99u8),
                 RegisterValue::from(0x01u8),
             ))
             .unwrap()
             .unwrap();
         let result = alu
-            .evaluate(ALUOperation::DecimalAdjust(RegisterValue::from(result)))
+            .evaluate(AluOperation::DecimalAdjust(RegisterValue::from(result)))
             .unwrap();
         assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, true, false)
+            AluFlags::from_bools(true, false, true, true, false)
         );
     }
 
     #[test]
     fn alu_bitwise_and() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for bitwise AND
         // bitwise AND 0x37 and 0xF0
         let result = alu
-            .evaluate(ALUOperation::BitwiseAnd(
+            .evaluate(AluOperation::BitwiseAnd(
                 RegisterValue::from(0x37u8),
                 RegisterValue::from(0xF0u8),
             ))
@@ -712,12 +712,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0x30u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, true, false, false)
+            AluFlags::from_bools(false, false, true, false, false)
         );
 
         // bitwise AND 0xFF and 0x00
         let result = alu
-            .evaluate(ALUOperation::BitwiseAnd(
+            .evaluate(AluOperation::BitwiseAnd(
                 RegisterValue::from(0xFFu8),
                 RegisterValue::from(0x00u8),
             ))
@@ -725,18 +725,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, false, false)
+            AluFlags::from_bools(true, false, true, false, false)
         );
     }
 
     #[test]
     fn alu_bitwise_xor() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for bitwise XOR
         // bitwise XOR 0x55 and 0xFF
         let result = alu
-            .evaluate(ALUOperation::BitwiseXor(
+            .evaluate(AluOperation::BitwiseXor(
                 RegisterValue::from(0x55u8),
                 RegisterValue::from(0xFFu8),
             ))
@@ -744,12 +744,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0xAAu8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, false, false)
+            AluFlags::from_bools(false, true, true, false, false)
         );
 
         // bitwise XOR 0xAB and 0xAB
         let result = alu
-            .evaluate(ALUOperation::BitwiseXor(
+            .evaluate(AluOperation::BitwiseXor(
                 RegisterValue::from(0xABu8),
                 RegisterValue::from(0xABu8),
             ))
@@ -757,18 +757,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0x00u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, false, false)
+            AluFlags::from_bools(true, false, true, false, false)
         );
     }
 
     #[test]
     fn alu_bitwise_or() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for bitwise OR
         // bitwise OR 0x55 and 0xAA
         let result = alu
-            .evaluate(ALUOperation::BitwiseOr(
+            .evaluate(AluOperation::BitwiseOr(
                 RegisterValue::from(0x55u8),
                 RegisterValue::from(0xAAu8),
             ))
@@ -776,12 +776,12 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0xFFu8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, false, false)
+            AluFlags::from_bools(false, true, true, false, false)
         );
 
         // bitwise OR 0x3A and 0x4A
         let result = alu
-            .evaluate(ALUOperation::BitwiseOr(
+            .evaluate(AluOperation::BitwiseOr(
                 RegisterValue::from(0x3Au8),
                 RegisterValue::from(0x4Au8),
             ))
@@ -789,18 +789,18 @@ mod tests {
         assert_eq!(result.unwrap(), RegisterValue::from(0x7Au8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_comparison() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for comparison
         // compare 5 and 5
         let result = alu
-            .evaluate(ALUOperation::Comparison(
+            .evaluate(AluOperation::Comparison(
                 RegisterValue::from(5u8),
                 RegisterValue::from(5u8),
             ))
@@ -808,12 +808,12 @@ mod tests {
         assert_eq!(result, None);
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(true, false, true, false, false)
+            AluFlags::from_bools(true, false, true, false, false)
         );
 
         // compare 6 and 5
         let result = alu
-            .evaluate(ALUOperation::Comparison(
+            .evaluate(AluOperation::Comparison(
                 RegisterValue::from(6u8),
                 RegisterValue::from(5u8),
             ))
@@ -821,12 +821,12 @@ mod tests {
         assert_eq!(result, None);
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // compare 4 and 5
         let result = alu
-            .evaluate(ALUOperation::Comparison(
+            .evaluate(AluOperation::Comparison(
                 RegisterValue::from(4u8),
                 RegisterValue::from(5u8),
             ))
@@ -834,13 +834,13 @@ mod tests {
         assert_eq!(result, None);
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, true, true, true, true)
+            AluFlags::from_bools(false, true, true, true, true)
         );
     }
 
     #[test]
     fn alu_rotate_left() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for left rotation
         // ensure that 8 rotations will result in the original number
@@ -848,19 +848,19 @@ mod tests {
         let mut result = RegisterValue::from(1u8);
         for _ in 0..8 {
             result = alu
-                .evaluate(ALUOperation::RotateLeft(result))
+                .evaluate(AluOperation::RotateLeft(result))
                 .unwrap()
                 .unwrap();
         }
         assert_eq!(result, RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, false)
+            AluFlags::from_bools(false, false, false, true, false)
         );
 
         // rotate 0x55 left once
         let result = alu
-            .evaluate(ALUOperation::RotateLeft(RegisterValue::from(0x55u8)))
+            .evaluate(AluOperation::RotateLeft(RegisterValue::from(0x55u8)))
             .unwrap()
             .unwrap();
         assert_eq!(result, RegisterValue::from(0xAAu8));
@@ -868,13 +868,13 @@ mod tests {
             alu.flags(),
             // even though the sign bit is 1 and the parity is even, only
             // the carry flag is modified during a rotation
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_rotate_right() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for right rotation
         // ensure that 8 rotations will result in the original number
@@ -882,31 +882,31 @@ mod tests {
         let mut result = RegisterValue::from(1u8);
         for _ in 0..8 {
             result = alu
-                .evaluate(ALUOperation::RotateRight(result))
+                .evaluate(AluOperation::RotateRight(result))
                 .unwrap()
                 .unwrap();
         }
         assert_eq!(result, RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // rotate 0xAA right once
         let result = alu
-            .evaluate(ALUOperation::RotateRight(RegisterValue::from(0xAAu8)))
+            .evaluate(AluOperation::RotateRight(RegisterValue::from(0xAAu8)))
             .unwrap()
             .unwrap();
         assert_eq!(result, RegisterValue::from(0x55u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_rotate_left_through_carry() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for left rotation through carry
         // ensure that 9 rotations will result in the same number
@@ -914,19 +914,19 @@ mod tests {
         let mut result = RegisterValue::from(1u8);
         for _ in 0..9 {
             result = alu
-                .evaluate(ALUOperation::RotateLeftThroughCarry(result))
+                .evaluate(AluOperation::RotateLeftThroughCarry(result))
                 .unwrap()
                 .unwrap();
         }
         assert_eq!(result, RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // rotate 0xAA left through carry
         let result = alu
-            .evaluate(ALUOperation::RotateLeftThroughCarry(RegisterValue::from(
+            .evaluate(AluOperation::RotateLeftThroughCarry(RegisterValue::from(
                 0xAAu8,
             )))
             .unwrap()
@@ -934,12 +934,12 @@ mod tests {
         assert_eq!(result, RegisterValue::from(0x54u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, false)
+            AluFlags::from_bools(false, false, false, true, false)
         );
 
         // rotate 0x54 left through carry
         let result = alu
-            .evaluate(ALUOperation::RotateLeftThroughCarry(RegisterValue::from(
+            .evaluate(AluOperation::RotateLeftThroughCarry(RegisterValue::from(
                 0x54u8,
             )))
             .unwrap()
@@ -947,13 +947,13 @@ mod tests {
         assert_eq!(result, RegisterValue::from(0xA9u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_rotate_right_through_carry() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for right rotation through carry
         // ensure that 9 rotations will result in the same number
@@ -961,19 +961,19 @@ mod tests {
         let mut result = RegisterValue::from(1u8);
         for _ in 0..9 {
             result = alu
-                .evaluate(ALUOperation::RotateRightThroughCarry(result))
+                .evaluate(AluOperation::RotateRightThroughCarry(result))
                 .unwrap()
                 .unwrap();
         }
         assert_eq!(result, RegisterValue::from(1u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // rotate 0x55 right through carry
         let result = alu
-            .evaluate(ALUOperation::RotateRightThroughCarry(RegisterValue::from(
+            .evaluate(AluOperation::RotateRightThroughCarry(RegisterValue::from(
                 0x55u8,
             )))
             .unwrap()
@@ -981,12 +981,12 @@ mod tests {
         assert_eq!(result, RegisterValue::from(0x2Au8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, false)
+            AluFlags::from_bools(false, false, false, true, false)
         );
 
         // rotate 0x2A left through carry
         let result = alu
-            .evaluate(ALUOperation::RotateRightThroughCarry(RegisterValue::from(
+            .evaluate(AluOperation::RotateRightThroughCarry(RegisterValue::from(
                 0x2Au8,
             )))
             .unwrap()
@@ -994,62 +994,62 @@ mod tests {
         assert_eq!(result, RegisterValue::from(0x95u8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
     }
 
     #[test]
     fn alu_complement() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test some hand-picked values for complement (bitwise NOT)
         // complement 0x55
         let result = alu
-            .evaluate(ALUOperation::Complement(RegisterValue::from(0x55u8)))
+            .evaluate(AluOperation::Complement(RegisterValue::from(0x55u8)))
             .unwrap()
             .unwrap();
         assert_eq!(result, RegisterValue::from(0xAAu8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // no flags should be updated
+            AluFlags::new() // no flags should be updated
         );
 
         // complement 0xF0
         let result = alu
-            .evaluate(ALUOperation::Complement(RegisterValue::from(0xF0u8)))
+            .evaluate(AluOperation::Complement(RegisterValue::from(0xF0u8)))
             .unwrap()
             .unwrap();
         assert_eq!(result, RegisterValue::from(0x0Fu8));
         assert_eq!(
             alu.flags(),
-            ALUFlags::new() // no flags should be updated
+            AluFlags::new() // no flags should be updated
         );
     }
 
     #[test]
     fn alu_set_and_complement_carry() {
-        let mut alu = ALU::new();
+        let mut alu = Alu::new();
 
         // test out setting and complementing the carry flag
         // set the carry
-        alu.evaluate(ALUOperation::SetCarry).unwrap();
+        alu.evaluate(AluOperation::SetCarry).unwrap();
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, false)
+            AluFlags::from_bools(false, false, false, true, false)
         );
 
         // complement the carry
-        alu.evaluate(ALUOperation::ComplementCarry).unwrap();
+        alu.evaluate(AluOperation::ComplementCarry).unwrap();
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, false, false)
+            AluFlags::from_bools(false, false, false, false, false)
         );
 
         // complement the carry again
-        alu.evaluate(ALUOperation::ComplementCarry).unwrap();
+        alu.evaluate(AluOperation::ComplementCarry).unwrap();
         assert_eq!(
             alu.flags(),
-            ALUFlags::from_bools(false, false, false, true, false)
+            AluFlags::from_bools(false, false, false, true, false)
         );
     }
 }

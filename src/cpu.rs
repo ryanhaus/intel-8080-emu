@@ -1,5 +1,5 @@
 /*
- * cpu.rs - Contains all code relating to the CPU struct
+ * cpu.rs - Contains all code relating to the Cpu struct
  * See Intel 8080 datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
 
@@ -12,19 +12,19 @@ use alu::*;
 use memory::*;
 use registers::*;
 
-// CPU struct - holds all components of the CPU and has I/O functions
-pub struct CPU {
+// Cpu struct - holds all components of the CPU and has I/O functions
+pub struct Cpu {
     reg_array: RegisterArray,
-    alu: ALU,
+    alu: Alu,
     memory: Memory,
 }
 
-impl CPU {
-    // creates a new empty instance of the CPU struct
+impl Cpu {
+    // creates a new empty instance of the Cpu struct
     pub fn new() -> Self {
         Self {
             reg_array: RegisterArray::new(),
-            alu: ALU::new(),
+            alu: Alu::new(),
             memory: Memory::new(),
         }
     }
@@ -51,7 +51,7 @@ impl CPU {
     // decodes the instruction at the current program counter into an Instruction enum
     fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
         let instruction = self.read_next(false)?;
-        CPU::decode_instruction(instruction)
+        Cpu::decode_instruction(instruction)
     }
 
     // decodes a given instruction as a RegisterValue into an Instruction enum
@@ -68,7 +68,7 @@ impl CPU {
 
         // determine what the instruction is
         match instruction_bits {
-            [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::NOP),
+            [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::Nop),
             _ => Err(String::from(
                 "Unknown/unsupported instruction: {instruction}",
             )),
@@ -128,7 +128,7 @@ enum InstructionSource {
 // to execute it
 #[derive(Debug, PartialEq)]
 enum Instruction {
-    NOP,
+    Nop,
 }
 
 #[cfg(test)]
@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn cpu_read_next_value() {
-        let mut cpu = CPU::new();
+        let mut cpu = Cpu::new();
 
         // write some values to program memory, modify PC, and read those
         // values back and make sure they are the same values that were written
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn cpu_evaluate_instruction_source() {
-        let mut cpu = CPU::new();
+        let mut cpu = Cpu::new();
 
         // write some dummy values into memory/registers, then attempt to evaluate
         // InstructionSource instances to see if they return the correct values
