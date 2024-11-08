@@ -148,6 +148,22 @@ impl Register {
             WZ => "WZ",
         }
     }
+
+    pub fn from_reg_id(id: u8) -> Result<Self, String> {
+        use Register::*;
+
+        match id {
+            0b000 => Ok(B),
+            0b001 => Ok(C),
+            0b010 => Ok(D),
+            0b011 => Ok(E),
+            0b100 => Ok(H),
+            0b101 => Ok(L),
+            0b110 => Err(String::from("Attempt to read from the register M, which is not an actual register. Read from memory instead")),
+            0b111 => Ok(A),
+            _ => Err(format!("Unknown register ID: {id}")),
+        }
+    }
 }
 
 // RegisterValue enum - could either be a 8-bit or 16-bit integer value
