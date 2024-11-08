@@ -128,6 +128,21 @@ enum InstructionSource {
     Accumulator,
 }
 
+impl InstructionSource {
+    // returns an InstructionSource based on its ID
+    pub fn from_id(id: u8) -> Result<Self, String> {
+        match id {
+            0b000..=0b101 => Ok(InstructionSource::Register(Register::from_reg_id(id)?)),
+            0b110 => Ok(InstructionSource::Memory(
+                MemorySource::ProgramCounter,
+                MemorySize::Integer8,
+            )),
+            0b111 => Ok(InstructionSource::Accumulator),
+            _ => Err(format!("Unknown InstructionSource ID: {id}")),
+        }
+    }
+}
+
 // Instruction enum - represents a single instruction and all data required
 // to execute it
 #[derive(Debug, PartialEq)]
