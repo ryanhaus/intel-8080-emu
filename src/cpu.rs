@@ -74,14 +74,46 @@ impl CPU {
             )),
         }
     }
+
+    // evaluates the value of a InstructionSource into a RegisterValue
+    fn evaluate_source(&mut self, source: InstructionSource) -> Result<RegisterValue, String> {
+        use InstructionSource::*;
+
+        match source {
+            // if the source value is contained in memory
+            Memory(memory_source) => {
+                use MemorySource::*;
+
+                match memory_source {
+                    // if the memory source contains the address directly
+                    Address(addr, read_16) => self.memory.read(addr, read_16),
+
+                    // if the memory source address is contained in a register
+                    Register(register, read_16) => {
+                        let addr = self.reg_array.read_reg(register);
+
+                        self.memory.read(addr, read_16)
+                    }
+
+                    // if the memory source address is the program counter
+                    // this will also increase the program counter by an
+                    // appropriate amount
+                    ProgramCounter(read_16) => self.read_next(read_16),
+                }
+            }
+
+            // if the source value is contained in a register
+            Register(register) => Ok(self.reg_array.read_reg(register)),
+        }
+    }
 }
 
 // MemorySource enum - represents a source of something in memory
 #[derive(Debug, PartialEq)]
 enum MemorySource {
-    Address(RegisterValue),
-    Register(Register),
-    ProgramCounter,
+    Address(RegisterValue, bool),
+    Register(Register, bool),
+    ProgramCounter(bool),
 }
 
 // InstructionSource enum - represents the source of data to be passed to an
@@ -137,5 +169,58 @@ mod tests {
             cpu.reg_array.read_reg(Register::PC),
             RegisterValue::from(0x1004u16)
         );
+    }
+
+    #[test]
+    fn cpu_evaluate_instruction_source() {
+        let mut cpu = CPU::new();
+
+        // write some dummy values into memory/registers, then attempt to evaluate
+        // InstructionSource instances to see if they return the correct values
+        // write 0x1234 to 0x1000
+        cpu.memory
+            .write(
+                RegisterValue::from(0x1000u16),
+                RegisterValue::from(0x1234u16),
+            )
+            .unwrap();
+
+        // read from explicit memory address
+        let value = cpu
+            .evaluate_source(InstructionSource::Memory(MemorySource::Address(
+                RegisterValue::from(0x1000u16),
+                true,
+            )))
+            .unwrap();
+        assert_eq!(value, RegisterValue::from(0x1234u16));
+
+        // write 0x1000 to HL, evaluate HL register
+        cpu.reg_array
+            .write_reg(Register::HL, RegisterValue::from(0x1000u16))
+            .unwrap();
+        let value = cpu
+            .evaluate_source(InstructionSource::Register(Register::HL))
+            .unwrap();
+        assert_eq!(value, RegisterValue::Integer8Pair(0x10, 0x00));
+
+        // read the value at the memory address in HL (0x1000)
+        let value = cpu
+            .evaluate_source(InstructionSource::Memory(MemorySource::Register(
+                Register::HL,
+                true,
+            )))
+            .unwrap();
+        assert_eq!(value, RegisterValue::from(0x1234u16));
+
+        // set PC to 0x1000, read from PC
+        cpu.reg_array
+            .write_reg(Register::PC, RegisterValue::from(0x1000u16))
+            .unwrap();
+        let value = cpu
+            .evaluate_source(InstructionSource::Memory(MemorySource::ProgramCounter(
+                true,
+            )))
+            .unwrap();
+        assert_eq!(value, RegisterValue::from(0x1234u16));
     }
 }
