@@ -13,6 +13,9 @@ pub struct RegisterArray {
     program_counter: u16, // 16-bit program counter
     stack_pointer: u16,   // 16-bit stack pointer
 
+    // 8-bit ALU accumulator register
+    reg_a: u8,
+
     // 8-bit general purpose registers
     // also can be used as 16-bit registers BC, DE, HL
     reg_b: u8,
@@ -33,6 +36,7 @@ impl RegisterArray {
         Self {
             program_counter: 0,
             stack_pointer: 0,
+            reg_a: 0,
             reg_b: 0,
             reg_c: 0,
             reg_d: 0,
@@ -52,6 +56,7 @@ impl RegisterArray {
         match register {
             PC => Integer16(self.program_counter),
             SP => Integer16(self.stack_pointer),
+            A => Integer8(self.reg_a),
             B => Integer8(self.reg_b),
             C => Integer8(self.reg_c),
             D => Integer8(self.reg_d),
@@ -74,6 +79,7 @@ impl RegisterArray {
         match register {
             PC => self.program_counter = value.into(),
             SP => self.stack_pointer = value.into(),
+            A => self.reg_a = value.try_into()?,
             B => self.reg_b = value.try_into()?,
             C => self.reg_c = value.try_into()?,
             D => self.reg_d = value.try_into()?,
@@ -98,6 +104,9 @@ impl RegisterArray {
 pub enum Register {
     PC, // 16-bit program counter
     SP, // 16-bit stack pointer
+
+    // 8-bit ALU accumulator register
+    A,
 
     // 8-bit general purpose registers
     B,
@@ -124,6 +133,7 @@ impl Register {
         match self {
             PC => "PC",
             SP => "SP",
+            A => "A",
             B => "B",
             C => "C",
             D => "D",
