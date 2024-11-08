@@ -3,6 +3,25 @@
  */
 use super::registers::*;
 
+// MemorySize enum - represents a size of memory in bits
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum MemorySize {
+    Integer8,
+    Integer16,
+}
+
+impl MemorySize {
+    // returns the amount of bytes that would be occupied by a value of the size
+    // indicated by self
+    pub fn n_bytes(&self) -> usize {
+        use MemorySize::*;
+        match self {
+            Integer8 => 1,
+            Integer16 => 2,
+        }
+    }
+}
+
 // Memory struct - holds all memory and has functions for accessing and
 // modifying the memory
 pub struct Memory {
@@ -16,25 +35,29 @@ impl Memory {
     }
 
     // reads a RegisterValue from the given address
-    pub fn read(&self, addr: RegisterValue, read_16: bool) -> Result<RegisterValue, String> {
+    pub fn read(&self, addr: RegisterValue, size: MemorySize) -> Result<RegisterValue, String> {
         // convert addr to usize for array access
         let addr = u16::from(addr) as usize;
 
         // read the value
-        let value = if read_16 {
-            // make sure this won't read outside of memory
-            if addr == 0xFFFF {
-                return Err(String::from("Attempt to read outside of memory"));
-            }
+        use MemorySize::*;
+        let value = match size {
+            // read a single 8-bit integer from memory
+            Integer8 => RegisterValue::from(self.data[addr]),
 
             // read little-endian 16-bit integer from memory
-            let lower = self.data[addr] as u16;
-            let higher = self.data[addr + 1] as u16;
-            let value = (higher << 8) + lower;
-            RegisterValue::from(value)
-        } else {
-            // read single 8-bit integer from memory
-            RegisterValue::from(self.data[addr])
+            Integer16 => {
+                // make sure this won't read outside of memory
+                if addr == 0xFFFF {
+                    return Err(String::from("Attempt to read outside of memory"));
+                }
+
+                // read little-endian 16-bit integer from memory
+                let lower = self.data[addr] as u16;
+                let higher = self.data[addr + 1] as u16;
+                let value = (higher << 8) + lower;
+                RegisterValue::from(value)
+            }
         };
 
         // return the value
@@ -106,7 +129,9 @@ mod tests {
         for i in 0..0x10000 {
             assert_eq!(
                 written_values[i],
-                memory.read(RegisterValue::from(i as u16), false).unwrap()
+                memory
+                    .read(RegisterValue::from(i as u16), MemorySize::Integer8)
+                    .unwrap()
             );
         }
     }
@@ -125,17 +150,23 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            memory.read(RegisterValue::from(0x1000u16), true).unwrap(),
+            memory
+                .read(RegisterValue::from(0x1000u16), MemorySize::Integer16)
+                .unwrap(),
             RegisterValue::from(0xABCDu16)
         );
 
         assert_eq!(
-            memory.read(RegisterValue::from(0x1000u16), false).unwrap(),
+            memory
+                .read(RegisterValue::from(0x1000u16), MemorySize::Integer8)
+                .unwrap(),
             RegisterValue::from(0xCDu8)
         );
 
         assert_eq!(
-            memory.read(RegisterValue::from(0x1001u16), false).unwrap(),
+            memory
+                .read(RegisterValue::from(0x1001u16), MemorySize::Integer8)
+                .unwrap(),
             RegisterValue::from(0xABu8)
         );
     }
@@ -164,6 +195,8 @@ mod tests {
         // try to read a 16-bit value from address 0xFFFF, which would read
         // outside of memory and should return an Err, which upon .unwrap()
         // will panic
-        memory.read(RegisterValue::from(0xFFFFu16), true).unwrap();
+        memory
+            .read(RegisterValue::from(0xFFFFu16), MemorySize::Integer16)
+            .unwrap();
     }
 }

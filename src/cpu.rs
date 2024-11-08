@@ -31,15 +31,15 @@ impl Cpu {
 
     // reads a RegisterValue at the current program counter, also increments
     // the program counter by an appropriate amount
-    fn read_next(&mut self, read_16: bool) -> Result<RegisterValue, String> {
+    fn read_next(&mut self, size: MemorySize) -> Result<RegisterValue, String> {
         // get the current value of the program counter
         let pc_val = self.reg_array.read_reg(Register::PC);
 
         // get the value in memory at the program counter
-        let value = self.memory.read(pc_val, read_16)?;
+        let value = self.memory.read(pc_val, size)?;
 
         // increment the program counter by an appropriate amount
-        let pc_inc_val = if read_16 { 2u16 } else { 1u16 };
+        let pc_inc_val = size.n_bytes() as u16;
         let new_pc_val = u16::from(pc_val) + pc_inc_val;
         self.reg_array
             .write_reg(Register::PC, RegisterValue::from(new_pc_val))?;
@@ -50,7 +50,7 @@ impl Cpu {
 
     // decodes the instruction at the current program counter into an Instruction enum
     fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
-        let instruction = self.read_next(false)?;
+        let instruction = self.read_next(MemorySize::Integer8)?;
         Cpu::decode_instruction(instruction)
     }
 
@@ -81,24 +81,24 @@ impl Cpu {
 
         match source {
             // if the source value is contained in memory
-            Memory(memory_source, read_16) => {
+            Memory(memory_source, size) => {
                 use MemorySource::*;
 
                 match memory_source {
                     // if the memory source contains the address directly
-                    Address(addr) => self.memory.read(addr, read_16),
+                    Address(addr) => self.memory.read(addr, size),
 
                     // if the memory source address is contained in a register
                     Register(register) => {
                         let addr = self.reg_array.read_reg(register);
 
-                        self.memory.read(addr, read_16)
+                        self.memory.read(addr, size)
                     }
 
                     // if the memory source address is the program counter
                     // this will also increase the program counter by an
                     // appropriate amount
-                    ProgramCounter => self.read_next(read_16),
+                    ProgramCounter => self.read_next(size),
                 }
             }
 
@@ -123,7 +123,7 @@ enum MemorySource {
 // instruction, will be converted into a RegisterValue during execution
 #[derive(Debug, PartialEq)]
 enum InstructionSource {
-    Memory(MemorySource, bool),
+    Memory(MemorySource, MemorySize),
     Register(Register),
     Accumulator,
 }
@@ -165,9 +165,18 @@ mod tests {
             .unwrap();
 
         // should have been written little-endian
-        assert_eq!(cpu.read_next(true).unwrap(), RegisterValue::from(0x0123u16));
-        assert_eq!(cpu.read_next(false).unwrap(), RegisterValue::from(0x67u8));
-        assert_eq!(cpu.read_next(false).unwrap(), RegisterValue::from(0x45u8));
+        assert_eq!(
+            cpu.read_next(MemorySize::Integer16).unwrap(),
+            RegisterValue::from(0x0123u16)
+        );
+        assert_eq!(
+            cpu.read_next(MemorySize::Integer8).unwrap(),
+            RegisterValue::from(0x67u8)
+        );
+        assert_eq!(
+            cpu.read_next(MemorySize::Integer8).unwrap(),
+            RegisterValue::from(0x45u8)
+        );
 
         assert_eq!(
             cpu.reg_array.read_reg(Register::PC),
@@ -193,7 +202,7 @@ mod tests {
         let value = cpu
             .evaluate_source(InstructionSource::Memory(
                 MemorySource::Address(RegisterValue::from(0x1000u16)),
-                true,
+                MemorySize::Integer16,
             ))
             .unwrap();
         assert_eq!(value, RegisterValue::from(0x1234u16));
@@ -211,7 +220,7 @@ mod tests {
         let value = cpu
             .evaluate_source(InstructionSource::Memory(
                 MemorySource::Register(Register::HL),
-                true,
+                MemorySize::Integer16,
             ))
             .unwrap();
         assert_eq!(value, RegisterValue::from(0x1234u16));
@@ -223,7 +232,7 @@ mod tests {
         let value = cpu
             .evaluate_source(InstructionSource::Memory(
                 MemorySource::ProgramCounter,
-                true,
+                MemorySize::Integer16,
             ))
             .unwrap();
         assert_eq!(value, RegisterValue::from(0x1234u16));
