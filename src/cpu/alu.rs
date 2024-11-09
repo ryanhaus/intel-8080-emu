@@ -83,6 +83,17 @@ impl Alu {
         self.accumulator
     }
 
+    // writes a value to the accumulator register
+    pub fn write_accumulator(&mut self, value: RegisterValue) -> Result<(), String> {
+        if value.n_bytes() != 1 {
+            return Err(format!("Attempted to write a value of size {} to the accuulator register", value.n_bytes()));
+        }
+
+        self.accumulator = value;
+
+        Ok(())
+    }
+
     // returns the flags of the alu
     pub fn flags(&self) -> AluFlags {
         self.flags
