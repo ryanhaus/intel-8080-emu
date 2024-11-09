@@ -203,6 +203,19 @@ impl From<RegisterValue> for u16 {
     }
 }
 
+impl RegisterValue {
+    // returns the number of bytes occupied by a value of this RegisterValue type
+    pub fn n_bytes(&self) -> usize {
+        use RegisterValue::*;
+
+        match self {
+            Integer8(_) => 1,
+            Integer8Pair(_, _) => 2,
+            Integer16(_) => 2,
+        }
+    }
+}
+
 // tests
 #[cfg(test)]
 mod tests {
