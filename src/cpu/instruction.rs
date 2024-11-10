@@ -140,10 +140,7 @@ impl Instruction {
             // LXI rp, data: RP <- immediate
             [0, 0, _, _, 0, 0, 0, 1] => Ok(Instruction::Move(
                 InstructionSource::Register(Register::from_rp_id(rp)?),
-                InstructionSource::Memory(
-                    MemorySource::ProgramCounter,
-                   MemorySize::Integer16
-                ),
+                InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer16),
             )),
 
             // SHLD addr: (addr) <- HL
