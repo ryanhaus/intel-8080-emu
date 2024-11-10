@@ -167,18 +167,18 @@ impl Instruction {
             ))),
 
             // INR ddd: DDD <- DDD + 1
-            [0, 0, _, _, _, 1, 0, 0] => Ok(Instruction::Increment(InstructionSource::Register(
-                Register::from_reg_id(ddd)?,
-            ))),
+            [0, 0, _, _, _, 1, 0, 0] => {
+                Ok(Instruction::Increment(InstructionSource::from_id(ddd)?))
+            }
 
             // DCR ddd: DDD <- DDD - 1
-            [0, 0, _, _, _, 1, 0, 1] => Ok(Instruction::Decrement(InstructionSource::Register(
-                Register::from_reg_id(ddd)?,
-            ))),
+            [0, 0, _, _, _, 1, 0, 1] => {
+                Ok(Instruction::Decrement(InstructionSource::from_id(ddd)?))
+            }
 
             // MVI ddd, data: DDD <- immediate
             [0, 0, _, _, _, 1, 1, 0] => Ok(Instruction::Move(
-                InstructionSource::Register(Register::from_reg_id(ddd)?),
+                InstructionSource::from_id(ddd)?,
                 InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8),
             )),
 
@@ -252,8 +252,8 @@ impl Instruction {
 
             // MOV ddd,sss: DDD <- SSS
             [0, 1, _, _, _, _, _, _] => Ok(Instruction::Move(
-                InstructionSource::Register(Register::from_reg_id(ddd)?),
-                InstructionSource::Register(Register::from_reg_id(sss)?),
+                InstructionSource::from_id(ddd)?,
+                InstructionSource::from_id(sss)?,
             )),
 
             // A <- A [ALU operation] SSS
