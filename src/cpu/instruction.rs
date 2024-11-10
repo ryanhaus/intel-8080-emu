@@ -323,7 +323,7 @@ impl Instruction {
 
             // RST n: pushes PC to stack, PC <- n * 8
             [1, 1, _, _, _, 1, 1, 1] => Ok(Instruction::Reset(InstructionSource::Value(
-                RegisterValue::from((n as u16) * 8),
+                RegisterValue::from(n as u16),
             ))),
 
             // RET: PC <- (SP)
