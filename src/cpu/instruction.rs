@@ -81,6 +81,15 @@ impl Instruction {
                 Instruction::alu_instr_from_id(alu, src_a, src_b)
             }
 
+            // A <- A [ALU operation] immediate
+            [1, 1, _, _, _, 1, 1, 0] => {
+                let src_a = InstructionSource::Accumulator;
+                let src_b =
+                    InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8);
+
+                Instruction::alu_instr_from_id(alu, src_a, src_b)
+            }
+
             // unknown/unsupported instruction code
             _ => Err(String::from(
                 "Unknown/unsupported instruction: {instruction:08b}",
@@ -185,6 +194,15 @@ mod tests {
             Instruction::Comparison(
                 InstructionSource::Accumulator,
                 InstructionSource::Accumulator
+            )
+        );
+
+        // ADI imm
+        assert_eq!(
+            Instruction::decode(RegisterValue::from(0b1100_0110u8)).unwrap(),
+            Instruction::Add(
+                InstructionSource::Accumulator,
+                InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8)
             )
         );
     }
