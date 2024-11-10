@@ -156,6 +156,18 @@ impl Register {
             _ => Err(format!("Unknown register ID: {id}")),
         }
     }
+
+    pub fn from_rp_id(id: u8) -> Result<Self, String> {
+        use Register::*;
+
+        match id {
+            0b00 => Ok(Register::BC),
+            0b01 => Ok(Register::DE),
+            0b10 => Ok(Register::HL),
+            0b11 => Ok(Register::SP), // can sometimes refer to PSW
+            _ => Err(format!("Unknown register pair ID: {id}")),
+        }
+    }
 }
 
 // RegisterValue enum - could either be a 8-bit or 16-bit integer value
