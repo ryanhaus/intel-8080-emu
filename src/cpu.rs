@@ -88,6 +88,14 @@ impl Cpu {
 
             // if the source is contained in the accumulator (A register)
             Accumulator => Ok(self.alu.accumulator()),
+
+            // if the source is a sum of InstructionSources
+            Sum(source1, source2) => {
+                let val_src1 = self.evaluate_source(*source1)?;
+                let val_src2 = self.evaluate_source(*source2)?;
+
+                val_src1.try_add(val_src2)
+            }
         }
     }
 
@@ -130,6 +138,12 @@ impl Cpu {
             // if the source is the accumulator (A register)
             Accumulator => {
                 self.alu.write_accumulator(value)?;
+            }
+
+            _ => {
+                return Err(String::from(
+                    "Tried to write to an unwriteable InstructionSource variant",
+                ));
             }
         }
 

@@ -23,6 +23,7 @@ pub enum InstructionSource {
     Memory(MemorySource, MemorySize),
     Register(Register),
     Accumulator,
+    Sum(Box<Self>, Box<Self>),
 }
 
 impl InstructionSource {
