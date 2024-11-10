@@ -78,23 +78,31 @@ impl Instruction {
                 let src_a = InstructionSource::Accumulator;
                 let src_b = InstructionSource::from_id(sss)?;
 
-                match alu {
-                    0 => Ok(Instruction::Add(src_a, src_b)),
-                    1 => Ok(Instruction::AddWithCarry(src_a, src_b)),
-                    2 => Ok(Instruction::Subtract(src_a, src_b)),
-                    3 => Ok(Instruction::SubtractWithBorrow(src_a, src_b)),
-                    4 => Ok(Instruction::BitwiseAnd(src_a, src_b)),
-                    5 => Ok(Instruction::BitwiseXor(src_a, src_b)),
-                    6 => Ok(Instruction::BitwiseOr(src_a, src_b)),
-                    7 => Ok(Instruction::Comparison(src_a, src_b)),
-                    _ => Err(format!("Unknown ALU operation ID: {alu}")),
-                }
+                Instruction::alu_instr_from_id(alu, src_a, src_b)
             }
 
             // unknown/unsupported instruction code
             _ => Err(String::from(
                 "Unknown/unsupported instruction: {instruction:08b}",
             )),
+        }
+    }
+
+    fn alu_instr_from_id(
+        alu: u8,
+        src_a: InstructionSource,
+        src_b: InstructionSource,
+    ) -> Result<Self, String> {
+        match alu {
+            0 => Ok(Instruction::Add(src_a, src_b)),
+            1 => Ok(Instruction::AddWithCarry(src_a, src_b)),
+            2 => Ok(Instruction::Subtract(src_a, src_b)),
+            3 => Ok(Instruction::SubtractWithBorrow(src_a, src_b)),
+            4 => Ok(Instruction::BitwiseAnd(src_a, src_b)),
+            5 => Ok(Instruction::BitwiseXor(src_a, src_b)),
+            6 => Ok(Instruction::BitwiseOr(src_a, src_b)),
+            7 => Ok(Instruction::Comparison(src_a, src_b)),
+            _ => Err(format!("Unknown ALU operation ID: {alu}")),
         }
     }
 }
