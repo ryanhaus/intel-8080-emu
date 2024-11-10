@@ -31,7 +31,7 @@ impl InstructionSource {
         match id {
             0b000..=0b101 => Ok(InstructionSource::Register(Register::from_reg_id(id)?)),
             0b110 => Ok(InstructionSource::Memory(
-                MemorySource::ProgramCounter,
+                MemorySource::Register(Register::HL),
                 MemorySize::Integer8,
             )),
             0b111 => Ok(InstructionSource::Accumulator),
@@ -164,7 +164,10 @@ mod tests {
             Instruction::decode(RegisterValue::from(0b1011_0110u8)).unwrap(),
             Instruction::BitwiseOr(
                 InstructionSource::Accumulator,
-                InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8)
+                InstructionSource::Memory(
+                    MemorySource::Register(Register::HL),
+                    MemorySize::Integer8
+                )
             )
         );
 
