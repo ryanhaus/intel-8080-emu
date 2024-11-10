@@ -167,7 +167,7 @@ impl Cpu {
             0,
             flags.parity as u8,
             1,
-            flags.carry as u8
+            flags.carry as u8,
         ];
 
         // form F from bits
