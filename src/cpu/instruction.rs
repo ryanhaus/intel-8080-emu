@@ -63,7 +63,7 @@ pub enum Instruction {
     Store(InstructionSource),
     Increment(InstructionSource),
     Decrement(InstructionSource),
-    Move(InstructionSource),
+    Move(InstructionSource, InstructionSource),
     RotateLeft(InstructionSource),
     RotateLeftThroughCarry(InstructionSource),
     RotateRight(InstructionSource),
