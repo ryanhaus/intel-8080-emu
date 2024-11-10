@@ -211,7 +211,7 @@ impl Instruction {
             }
 
             // DCX rp: RP <- RP - 1
-            [0, 0, _, _, 1, 0, 1, 1] => Ok(Instruction::Increment(InstructionSource::Register(
+            [0, 0, _, _, 1, 0, 1, 1] => Ok(Instruction::Decrement(InstructionSource::Register(
                 Register::from_rp_id(rp)?,
             ))),
 
