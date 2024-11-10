@@ -55,6 +55,25 @@ pub enum InstructionCondition {
     Minus,
 }
 
+impl InstructionCondition {
+    // returns an InstructionCondition based on its ID
+    pub fn from_id(id: u8) -> Result<Self, String> {
+        use InstructionCondition::*;
+
+        match id {
+            0b000 => Ok(NotZero),
+            0b001 => Ok(Zero),
+            0b010 => Ok(NoCarry),
+            0b011 => Ok(Carry),
+            0b100 => Ok(ParityOdd),
+            0b101 => Ok(ParityEven),
+            0b110 => Ok(Plus),
+            0b111 => Ok(Minus),
+            _ => Err(format!("Unknown InstructionCondition ID: {id}")),
+        }
+    }
+}
+
 // Instruction enum - represents a single instruction and all data required
 // to execute it
 #[derive(Debug, PartialEq)]
