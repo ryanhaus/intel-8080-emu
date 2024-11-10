@@ -11,6 +11,16 @@ pub enum MemorySize {
 }
 
 impl MemorySize {
+    // returns the correct MemorySize to match n_bytes
+    pub fn from_bytes(n_bytes: usize) -> Result<Self, String> {
+        use MemorySize::*;
+        match n_bytes {
+            1 => Ok(Integer8),
+            2 => Ok(Integer16),
+            _ => Err(format!("No matching MemorySize for {n_bytes} bytes")),
+        }
+    }
+
     // returns the amount of bytes that would be occupied by a value of the size
     // indicated by self
     pub fn n_bytes(&self) -> usize {
