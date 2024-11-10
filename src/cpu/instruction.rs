@@ -9,7 +9,7 @@ use super::registers::*;
 use super::utils;
 
 // MemorySource enum - represents a source of something in memory
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MemorySource {
     Address(RegisterValue),
     Register(Register),
@@ -18,7 +18,7 @@ pub enum MemorySource {
 
 // InstructionSource enum - represents the source of data to be passed to an
 // instruction, will be converted into a RegisterValue during execution
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InstructionSource {
     Memory(MemorySource, MemorySize),
     Register(Register),
@@ -46,10 +46,10 @@ impl InstructionSource {
         use InstructionSource::*;
 
         match &self {
-             Memory(_, size) => Ok(size.n_bytes()),
-             Register(reg) => Ok(reg.n_bytes()),
-             Accumulator => Ok(1),
-             _ => Err(String::new()),
+            Memory(_, size) => Ok(size.n_bytes()),
+            Register(reg) => Ok(reg.n_bytes()),
+            Accumulator => Ok(1),
+            _ => Err(String::new()),
         }
     }
 }
