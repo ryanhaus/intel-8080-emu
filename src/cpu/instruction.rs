@@ -132,9 +132,129 @@ impl Instruction {
         let sss = instruction & 0b0000_0111; // instruction[2:0]
 
         // determine what the instruction is
+        // https://en.wikipedia.org/wiki/Intel_8080
         match instruction_bits {
             // NOP
             [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::Nop),
+
+            // LXI rp, data: RP <- immediate
+            [0, 0, _, _, 0, 0, 0, 1] => Ok(Instruction::Load(InstructionSource::Register(
+                Register::from_rp_id(rp)?,
+            ))),
+
+            // SHLD addr: (addr) <- HL
+            [0, 0, 1, 0, 0, 0, 1, 0] => Ok(Instruction::Store(InstructionSource::Register(
+                Register::HL,
+            ))),
+
+            // STA addr: (addr) <- A
+            [0, 0, 1, 1, 0, 0, 1, 0] => Ok(Instruction::Store(InstructionSource::Accumulator)),
+
+            // STAX rp: (RP) <- A [BC or DE only]
+            [0, 0, _, _, 0, 0, 1, 0] => {
+                let reg_pair = Register::from_rp_id(rp)?;
+
+                if reg_pair != Register::BC || reg_pair != Register::DE {
+                    return Err(String::from("STAX [rp] is only valid for BC or DE"));
+                }
+
+                Ok(Instruction::Store(InstructionSource::Register(reg_pair)))
+            }
+
+            // INX rp: RP <- RP + 1
+            [0, 0, _, _, 0, 0, 1, 1] => Ok(Instruction::Increment(InstructionSource::Register(
+                Register::from_rp_id(rp)?,
+            ))),
+
+            // INR ddd: DDD <- DDD + 1
+            [0, 0, _, _, _, 1, 0, 0] => Ok(Instruction::Increment(InstructionSource::Register(
+                Register::from_reg_id(ddd)?,
+            ))),
+
+            // DCR ddd: DDD <- DDD - 1
+            [0, 0, _, _, _, 1, 0, 1] => Ok(Instruction::Decrement(InstructionSource::Register(
+                Register::from_reg_id(ddd)?,
+            ))),
+
+            // MVI ddd, data: DDD <- immediate
+            [0, 0, _, _, _, 1, 1, 0] => Ok(Instruction::Move(
+                InstructionSource::Register(Register::from_reg_id(ddd)?),
+                InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8),
+            )),
+
+            // DAD rp: HL <- HL + RP
+            [0, 0, _, _, 1, 0, 0, 1] => Ok(Instruction::Move(
+                InstructionSource::Register(Register::HL),
+                InstructionSource::Sum(
+                    Box::new(InstructionSource::Register(Register::HL)),
+                    Box::new(InstructionSource::Register(Register::from_rp_id(rp)?)),
+                ),
+            )),
+
+            // LHLD addr: HL <- (addr)
+            [0, 0, 1, 0, 1, 0, 1, 0] => {
+                Ok(Instruction::Load(InstructionSource::Register(Register::HL)))
+            }
+
+            // LDA addr, A <- (addr)
+            [0, 0, 1, 1, 1, 0, 1, 0] => Ok(Instruction::Load(InstructionSource::Accumulator)),
+
+            // LDAX rp: A <- (RP) [BC or DE only]
+            [0, 0, _, _, 1, 0, 1, 0] => {
+                let reg_pair = Register::from_rp_id(rp)?;
+
+                if reg_pair != Register::BC || reg_pair != Register::DE {
+                    return Err(String::from("LDAX [rp] is only valid for BC or DE"));
+                }
+
+                Ok(Instruction::Load(InstructionSource::Register(reg_pair)))
+            }
+
+            // DCX rp: RP <- RP - 1
+            [0, 0, _, _, 1, 0, 1, 1] => Ok(Instruction::Increment(InstructionSource::Register(
+                Register::from_rp_id(rp)?,
+            ))),
+
+            // RLC: rotate A left through carry
+            [0, 0, 0, 0, 0, 1, 1, 1] => Ok(Instruction::RotateLeftThroughCarry(
+                InstructionSource::Accumulator,
+            )),
+
+            // RRC: rotate A right through carry
+            [0, 0, 0, 0, 1, 1, 1, 1] => Ok(Instruction::RotateRightThroughCarry(
+                InstructionSource::Accumulator,
+            )),
+
+            // RAL: rotate A left
+            [0, 0, 0, 1, 0, 1, 1, 1] => Ok(Instruction::RotateLeft(InstructionSource::Accumulator)),
+
+            // RAL: rotate A right
+            [0, 0, 0, 1, 1, 1, 1, 1] => {
+                Ok(Instruction::RotateRight(InstructionSource::Accumulator))
+            }
+
+            // DAA: decimal adjust A
+            [0, 0, 1, 0, 0, 1, 1, 1] => {
+                Ok(Instruction::DecimalAdjust(InstructionSource::Accumulator))
+            }
+
+            // CMA: complement A
+            [0, 0, 1, 0, 1, 1, 1, 1] => Ok(Instruction::Complement(InstructionSource::Accumulator)),
+
+            // STC: set carry
+            [0, 0, 1, 1, 0, 1, 1, 1] => Ok(Instruction::SetCarry),
+
+            // CMC: complement carry
+            [0, 0, 1, 1, 1, 1, 1, 1] => Ok(Instruction::ComplementCarry),
+
+            // HLT: halt
+            [0, 1, 1, 1, 0, 1, 1, 0] => Ok(Instruction::Halt),
+
+            // MOV ddd,sss: DDD <- SSS
+            [0, 1, _, _, _, _, _, _] => Ok(Instruction::Move(
+                InstructionSource::Register(Register::from_reg_id(ddd)?),
+                InstructionSource::Register(Register::from_reg_id(sss)?),
+            )),
 
             // A <- A [ALU operation] SSS
             [1, 0, _, _, _, _, _, _] => {
@@ -142,6 +262,50 @@ impl Instruction {
                 let src_b = InstructionSource::from_id(sss)?;
 
                 Instruction::alu_instr_from_id(alu, src_a, src_b)
+            }
+
+            // Rcc: if cc true, return
+            [1, 1, _, _, _, 0, 0, 0] => Ok(Instruction::ReturnConditional(
+                InstructionCondition::from_id(cc)?,
+            )),
+
+            // POP rp: pops value from stack into RP
+            [1, 1, _, _, 0, 0, 0, 1] => {
+                let mut reg_pair = Register::from_rp_id(rp)?;
+
+                // for stack operations, SP gets swapped with the PSW
+                if reg_pair == Register::SP {
+                    reg_pair = Register::PSW;
+                }
+
+                Ok(Instruction::StackPop(InstructionSource::Register(reg_pair)))
+            }
+
+            // Jcc addr: if cc true, jump to addr (PC <- addr)
+            [1, 1, _, _, _, 0, 1, 0] => Ok(Instruction::JumpConditional(
+                InstructionCondition::from_id(cc)?,
+            )),
+
+            // JMP addr: PC <- addr
+            [1, 1, 0, 0, 0, 0, 1, 1] => Ok(Instruction::Jump),
+
+            // Ccc addr: if cc true, call addr (push PC, set PC <- addr)
+            [1, 1, _, _, _, 1, 0, 0] => Ok(Instruction::CallConditional(
+                InstructionCondition::from_id(cc)?,
+            )),
+
+            // PUSH rp: push RP into stack
+            [1, 1, _, _, 0, 1, 0, 1] => {
+                let mut reg_pair = Register::from_rp_id(rp)?;
+
+                // for stack operations, SP gets swapped with the PSW
+                if reg_pair == Register::SP {
+                    reg_pair = Register::PSW;
+                }
+
+                Ok(Instruction::StackPush(InstructionSource::Register(
+                    reg_pair,
+                )))
             }
 
             // A <- A [ALU operation] immediate
@@ -152,6 +316,53 @@ impl Instruction {
 
                 Instruction::alu_instr_from_id(alu, src_a, src_b)
             }
+
+            // RST n: pushes PC to stack, PC <- n * 8
+            [1, 1, _, _, _, 1, 1, 1] => Ok(Instruction::Reset(InstructionSource::Value(
+                RegisterValue::from((n as u16) * 8),
+            ))),
+
+            // CALL addr: pushes PC to stack, PC <- addr
+            [1, 1, 0, 0, 1, 1, 0, 1] => Ok(Instruction::Call),
+
+            // OUT port: Port <- A
+            [1, 1, 0, 1, 0, 0, 1, 1] => Ok(Instruction::IoOut),
+
+            // IN port: A <- Port
+            [1, 1, 0, 1, 1, 0, 1, 1] => Ok(Instruction::IoIn),
+
+            // XTHL: HL <-> (SP)
+            [1, 1, 1, 0, 0, 0, 1, 1] => Ok(Instruction::Exchange(
+                InstructionSource::Register(Register::HL),
+                InstructionSource::Memory(
+                    MemorySource::Register(Register::SP),
+                    MemorySize::Integer16,
+                ),
+            )),
+
+            // PCHL: PC <-> HL
+            [1, 1, 1, 0, 1, 0, 0, 1] => Ok(Instruction::Exchange(
+                InstructionSource::Register(Register::PC),
+                InstructionSource::Register(Register::HL),
+            )),
+
+            // XCHG: HL <-> DE
+            [1, 1, 1, 0, 1, 0, 1, 1] => Ok(Instruction::Exchange(
+                InstructionSource::Register(Register::HL),
+                InstructionSource::Register(Register::DE),
+            )),
+
+            // DI: disable interrupts
+            [1, 1, 1, 1, 0, 0, 1, 1] => Ok(Instruction::DisableInterrupts),
+
+            // SPHL: SP <- HL
+            [1, 1, 1, 1, 1, 0, 0, 1] => Ok(Instruction::Move(
+                InstructionSource::Register(Register::SP),
+                InstructionSource::Register(Register::HL),
+            )),
+
+            // EI: enable interrupts
+            [1, 1, 1, 1, 1, 0, 1, 1] => Ok(Instruction::EnableInterrupts),
 
             // unknown/unsupported instruction code
             _ => Err(String::from(
