@@ -159,11 +159,20 @@ impl Register {
 }
 
 // RegisterValue enum - could either be a 8-bit or 16-bit integer value
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum RegisterValue {
     Integer8(u8),
     Integer8Pair(u8, u8),
     Integer16(u16),
+}
+
+impl PartialEq<RegisterValue> for RegisterValue {
+    fn eq(&self, other: &RegisterValue) -> bool {
+        let val_lhs = u16::from(*self);
+        let val_rhs = u16::from(*other);
+
+        val_lhs == val_rhs
+    }
 }
 
 impl From<u8> for RegisterValue {
