@@ -14,6 +14,10 @@ pub struct RegisterArray {
     program_counter: u16, // 16-bit program counter
     stack_pointer: u16,   // 16-bit stack pointer
 
+    // 8-bit registers from the ALU that are used to form the PSW
+    reg_a: u8,
+    reg_f: u8,
+
     // 8-bit general purpose registers
     // also can be used as 16-bit registers BC, DE, HL
     reg_b: u8,
@@ -34,6 +38,8 @@ impl RegisterArray {
         Self {
             program_counter: 0,
             stack_pointer: 0,
+            reg_a: 0,
+            reg_f: 0,
             reg_b: 0,
             reg_c: 0,
             reg_d: 0,
@@ -65,6 +71,7 @@ impl RegisterArray {
             DE => Integer8Pair(self.reg_d, self.reg_e),
             HL => Integer8Pair(self.reg_h, self.reg_l),
             WZ => Integer8Pair(self.reg_w, self.reg_z),
+            PSW => Integer8Pair(self.reg_a, self.reg_f),
         }
     }
 
@@ -87,6 +94,7 @@ impl RegisterArray {
             DE => (self.reg_d, self.reg_e) = utils::separate_values(value.into()),
             HL => (self.reg_h, self.reg_l) = utils::separate_values(value.into()),
             WZ => (self.reg_w, self.reg_z) = utils::separate_values(value.into()),
+            PSW => (self.reg_a, self.reg_f) = utils::separate_values(value.into()),
         };
 
         // if this point is reached, write was successful
@@ -115,6 +123,7 @@ pub enum Register {
     DE,
     HL,
     WZ, // temporary
+    PSW,
 }
 
 impl Register {
