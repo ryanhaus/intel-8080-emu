@@ -3,6 +3,7 @@
  * see the datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
 use super::registers::RegisterValue;
+use super::instruction::InstructionCondition;
 
 // AluFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,6 +35,22 @@ impl AluFlags {
             parity,
             carry,
             aux_carry,
+        }
+    }
+
+    // evaluates an InstructionCondition based on the flags
+    pub fn evaluate_condition(&self, condition: InstructionCondition) -> bool {
+        use InstructionCondition::*;
+        
+        match condition {
+            NotZero => !self.zero,
+            Zero => self.zero,
+            NoCarry => !self.carry,
+            Carry => self.carry,
+            ParityOdd => !self.parity,
+            ParityEven => self.parity,
+            Plus => !self.sign,
+            Minus => self.sign,
         }
     }
 }
