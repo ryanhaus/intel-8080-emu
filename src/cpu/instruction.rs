@@ -42,7 +42,7 @@ impl InstructionSource {
 
 // InstructionCondition enum - represents a condition that is used by an
 // instruction during execution
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum InstructionCondition {
     NotZero,
     Zero,
@@ -58,6 +58,21 @@ pub enum InstructionCondition {
 // to execute it
 #[derive(Debug, PartialEq)]
 pub enum Instruction {
+    Nop,
+    Load(InstructionSource),
+    Store(InstructionSource),
+    Increment(InstructionSource),
+    Decrement(InstructionSource),
+    Move(InstructionSource),
+    RotateLeft(InstructionSource),
+    RotateLeftThroughCarry(InstructionSource),
+    RotateRight(InstructionSource),
+    RotateRightThroughCarry(InstructionSource),
+    DecimalAdjust(InstructionSource),
+    Complement(InstructionSource),
+    SetCarry,
+    ComplementCarry,
+    Halt,
     Add(InstructionSource, InstructionSource),
     AddWithCarry(InstructionSource, InstructionSource),
     Subtract(InstructionSource, InstructionSource),
@@ -66,7 +81,20 @@ pub enum Instruction {
     BitwiseXor(InstructionSource, InstructionSource),
     BitwiseOr(InstructionSource, InstructionSource),
     Comparison(InstructionSource, InstructionSource),
-    Nop,
+    ReturnConditional(InstructionSource, InstructionCondition),
+    StackPop(InstructionSource),
+    JumpConditional(InstructionSource, InstructionCondition),
+    Jump(InstructionSource),
+    CallConditional(InstructionSource, InstructionCondition),
+    StackPush(InstructionSource),
+    Reset(InstructionSource),
+    Return(InstructionSource),
+    Call(InstructionSource),
+    IoOut(InstructionSource),
+    IoIn(InstructionSource),
+    Exchange(InstructionSource, InstructionSource),
+    DisableInterrupts,
+    EnableInterrupts,
 }
 
 impl Instruction {
