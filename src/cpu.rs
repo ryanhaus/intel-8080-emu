@@ -152,6 +152,36 @@ impl Cpu {
 
         Ok(())
     }
+
+    // updates the PSW (processor status word), which is equivalent to { A, F }
+    fn update_status_word(&mut self) -> Result<(), String> {
+        let a = u8::try_from(self.alu.accumulator())?;
+        let flags = self.alu.flags();
+
+        // F is equivalent to SZ0A0P1C
+        let f_bits = [
+            flags.sign as u8,
+            flags.zero as u8,
+            0,
+            flags.aux_carry as u8,
+            0,
+            flags.parity as u8,
+            1,
+            flags.carry as u8
+        ];
+
+        // form F from bits
+        let f = utils::from_bits(f_bits);
+
+        // form PSW
+        let psw = utils::combine_values(a, f);
+        let psw = RegisterValue::from(psw);
+
+        // update the PSW
+        self.reg_array.write_reg(Register::PSW, psw)?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

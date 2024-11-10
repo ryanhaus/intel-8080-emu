@@ -13,6 +13,19 @@ pub fn get_bits(x: u8) -> [u8; 8] {
     bits
 }
 
+// helper function to turn an array of 8 bits into a u8, with [0] being the MSB
+pub fn from_bits(bits: [u8; 8]) -> u8 {
+    let mut x = 0;
+
+    for (i, bit) in bits.iter().enumerate() {
+        let multiplier = 1 << i;
+
+        x += bit * multiplier;
+    }
+
+    x
+}
+
 // Helper function that combines two 8-bit values together to make a single
 // 16-bit value, primarily used for making register pairs out of two
 // registers. The first parameter will be the 'higher' register, and the

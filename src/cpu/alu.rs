@@ -8,11 +8,11 @@ use super::registers::RegisterValue;
 // AluFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct AluFlags {
-    zero: bool,
-    sign: bool,
-    parity: bool, // even parity
-    carry: bool,
-    aux_carry: bool, // aka half carry
+    pub zero: bool,
+    pub sign: bool,
+    pub parity: bool, // even parity
+    pub carry: bool,
+    pub aux_carry: bool, // aka half carry
 }
 
 impl AluFlags {
