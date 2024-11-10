@@ -96,6 +96,9 @@ impl Cpu {
 
                 val_src1.try_add(val_src2)
             }
+
+            // if the source is a value
+            Value(value) => Ok(value),
         }
     }
 

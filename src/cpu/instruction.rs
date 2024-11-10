@@ -24,6 +24,7 @@ pub enum InstructionSource {
     Register(Register),
     Accumulator,
     Sum(Box<Self>, Box<Self>),
+    Value(RegisterValue),
 }
 
 impl InstructionSource {
