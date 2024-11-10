@@ -40,6 +40,20 @@ impl InstructionSource {
     }
 }
 
+// InstructionCondition enum - represents a condition that is used by an
+// instruction during execution
+#[derive(Debug)]
+pub enum InstructionCondition {
+    NotZero,
+    Zero,
+    NoCarry,
+    Carry,
+    ParityOdd,
+    ParityEven,
+    Plus,
+    Minus,
+}
+
 // Instruction enum - represents a single instruction and all data required
 // to execute it
 #[derive(Debug, PartialEq)]
