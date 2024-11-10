@@ -40,6 +40,18 @@ impl InstructionSource {
             _ => Err(format!("Unknown InstructionSource ID: {id}")),
         }
     }
+
+    // returns the number of bytes taken up by self
+    pub fn n_bytes(&self) -> Result<usize, String> {
+        use InstructionSource::*;
+
+        match &self {
+             Memory(_, size) => Ok(size.n_bytes()),
+             Register(reg) => Ok(reg.n_bytes()),
+             Accumulator => Ok(1),
+             _ => Err(String::new()),
+        }
+    }
 }
 
 // InstructionCondition enum - represents a condition that is used by an
