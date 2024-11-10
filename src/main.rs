@@ -12,11 +12,11 @@ fn main() {
 
         match decoded {
             Ok(instr) => {
-                println!("{i:08b} ({i:02X}): {instr:?}");
+                println!("{i:08b} ({i:02X}):\n{instr:#?}\n");
             }
 
             Err(message) => {
-                println!("{i:08b} ({i:02X}): ERROR {message}");
+                println!("{i:08b} ({i:02X}): ERROR {message}\n");
             }
         }
     }
