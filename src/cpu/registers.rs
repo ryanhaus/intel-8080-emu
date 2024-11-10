@@ -177,6 +177,16 @@ impl Register {
             _ => Err(format!("Unknown register pair ID: {id}")),
         }
     }
+
+    // returns the number of bytes taken up by self
+    pub fn n_bytes(&self) -> usize {
+        use Register::*;
+
+        match self {
+            B | C | D | E | H | L | W | Z => 1,
+            PC | SP | BC | DE | HL | WZ | PSW => 2,
+        }
+    }
 }
 
 // RegisterValue enum - could either be a 8-bit or 16-bit integer value
