@@ -365,7 +365,7 @@ impl Instruction {
             [1, 1, 1, 1, 1, 0, 1, 1] => Ok(Instruction::EnableInterrupts),
 
             // unknown/unsupported instruction code
-            _ => Err(String::from(
+            _ => Err(format!(
                 "Unknown/unsupported instruction: {instruction:08b}",
             )),
         }
