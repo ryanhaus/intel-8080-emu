@@ -154,7 +154,7 @@ impl Instruction {
             [0, 0, _, _, 0, 0, 1, 0] => {
                 let reg_pair = Register::from_rp_id(rp)?;
 
-                if reg_pair != Register::BC || reg_pair != Register::DE {
+                if reg_pair != Register::BC && reg_pair != Register::DE {
                     return Err(String::from("STAX [rp] is only valid for BC or DE"));
                 }
 
@@ -203,7 +203,7 @@ impl Instruction {
             [0, 0, _, _, 1, 0, 1, 0] => {
                 let reg_pair = Register::from_rp_id(rp)?;
 
-                if reg_pair != Register::BC || reg_pair != Register::DE {
+                if reg_pair != Register::BC && reg_pair != Register::DE {
                     return Err(String::from("LDAX [rp] is only valid for BC or DE"));
                 }
 
