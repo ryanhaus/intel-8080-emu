@@ -90,6 +90,51 @@ impl Cpu {
             Accumulator => Ok(self.alu.accumulator()),
         }
     }
+
+    // writes a RegisterValue to an InstructionSource
+    fn write_to_source(
+        &mut self,
+        source: InstructionSource,
+        value: RegisterValue,
+    ) -> Result<(), String> {
+        use InstructionSource::*;
+
+        match source {
+            // if the source is contained in memory
+            Memory(memory_source, size) => {
+                use MemorySource::*;
+
+                // make sure the RegisterValue is the same size as the MemorySize
+                if value.n_bytes() != size.n_bytes() {
+                    return Err(format!("Attempted to write a value of size {} to a memory address expecting size {}", value.n_bytes(), size.n_bytes()));
+                }
+
+                // figure out where to write to
+                let addr = match memory_source {
+                    Address(addr) => addr,
+                    Register(register) => self.reg_array.read_reg(register),
+                    ProgramCounter => {
+                        return Err(String::from("Attempted to write to value at PC"))
+                    }
+                };
+
+                // write to the address
+                self.memory.write(addr, value)?;
+            }
+
+            // if the source is a register
+            Register(register) => {
+                self.reg_array.write_reg(register, value)?;
+            }
+
+            // if the source is the accumulator (A register)
+            Accumulator => {
+                self.alu.write_accumulator(value)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -207,5 +252,92 @@ mod tests {
         let value = cpu.evaluate_source(InstructionSource::Accumulator).unwrap();
 
         assert_eq!(value, RegisterValue::from(3u8));
+    }
+
+    #[test]
+    fn cpu_write_to_instruction_source() {
+        let mut cpu = Cpu::new();
+
+        // write a dummy value to some InstructionSources and read them back,
+        // verifying that they are the same value
+        // write to a single register
+        cpu.write_to_source(
+            InstructionSource::Register(Register::B),
+            RegisterValue::from(0xFFu8),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cpu.evaluate_source(InstructionSource::Register(Register::B))
+                .unwrap(),
+            RegisterValue::from(0xFFu8)
+        );
+
+        // write to a register pair
+        cpu.write_to_source(
+            InstructionSource::Register(Register::DE),
+            RegisterValue::from(0x1234u16),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cpu.evaluate_source(InstructionSource::Register(Register::DE))
+                .unwrap(),
+            RegisterValue::from(0x1234u16)
+        );
+
+        // write to memory: 8-bit explicit address
+        cpu.write_to_source(
+            InstructionSource::Memory(
+                MemorySource::Address(RegisterValue::from(0x1000u16)),
+                MemorySize::Integer8,
+            ),
+            RegisterValue::from(0xABu8),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cpu.evaluate_source(InstructionSource::Memory(
+                MemorySource::Address(RegisterValue::from(0x1000u16)),
+                MemorySize::Integer8
+            ))
+            .unwrap(),
+            RegisterValue::from(0xABu8)
+        );
+
+        // write to memory: 16-bit explicit address
+        cpu.write_to_source(
+            InstructionSource::Memory(
+                MemorySource::Address(RegisterValue::from(0x2000u16)),
+                MemorySize::Integer16,
+            ),
+            RegisterValue::from(0xABCDu16),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cpu.evaluate_source(InstructionSource::Memory(
+                MemorySource::Address(RegisterValue::from(0x2000u16)),
+                MemorySize::Integer16
+            ))
+            .unwrap(),
+            RegisterValue::from(0xABCDu16)
+        );
+
+        // write to memory: 16-bit from register
+        cpu.write_to_source(
+            InstructionSource::Memory(MemorySource::Register(Register::DE), MemorySize::Integer16),
+            RegisterValue::from(0x1234u16),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cpu.evaluate_source(InstructionSource::Memory(
+                MemorySource::Register(Register::DE),
+                MemorySize::Integer16
+            ))
+            .unwrap(),
+            RegisterValue::from(0x1234u16)
+        );
     }
 }
