@@ -138,9 +138,13 @@ impl Instruction {
             [0, 0, 0, 0, 0, 0, 0, 0] => Ok(Instruction::Nop),
 
             // LXI rp, data: RP <- immediate
-            [0, 0, _, _, 0, 0, 0, 1] => Ok(Instruction::Load(InstructionSource::Register(
-                Register::from_rp_id(rp)?,
-            ))),
+            [0, 0, _, _, 0, 0, 0, 1] => Ok(Instruction::Move(
+                InstructionSource::Register(Register::from_rp_id(rp)?),
+                InstructionSource::Memory(
+                    MemorySource::ProgramCounter,
+                   MemorySize::Integer16
+                ),
+            )),
 
             // SHLD addr: (addr) <- HL
             [0, 0, 1, 0, 0, 0, 1, 0] => Ok(Instruction::Store(InstructionSource::Register(
