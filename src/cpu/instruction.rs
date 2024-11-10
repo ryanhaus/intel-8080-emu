@@ -326,6 +326,9 @@ impl Instruction {
                 RegisterValue::from((n as u16) * 8),
             ))),
 
+            // RET: PC <- (SP)
+            [1, 1, 0, 0, 1, 0, 0, 1] => Ok(Instruction::Return),
+
             // CALL addr: pushes PC to stack, PC <- addr
             [1, 1, 0, 0, 1, 1, 0, 1] => Ok(Instruction::Call),
 
