@@ -2,8 +2,8 @@
  * alu.rs - contains code relating to the arithmetic & logic unit (ALU)
  * see the datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
-use super::registers::RegisterValue;
 use super::instruction::InstructionCondition;
+use super::registers::RegisterValue;
 
 // AluFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -41,7 +41,7 @@ impl AluFlags {
     // evaluates an InstructionCondition based on the flags
     pub fn evaluate_condition(&self, condition: InstructionCondition) -> bool {
         use InstructionCondition::*;
-        
+
         match condition {
             NotZero => !self.zero,
             Zero => self.zero,
