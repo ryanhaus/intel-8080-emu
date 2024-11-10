@@ -235,6 +235,39 @@ impl RegisterValue {
             Integer16(_) => 2,
         }
     }
+
+    // tries to add two RegisterValues together. consumes self and rhs
+    pub fn try_add(self, rhs: Self) -> Result<Self, String> {
+        use RegisterValue::*;
+
+        // if either operand is an Integer8Pair, convert it to an Integer16 and
+        // re-call this method recursively
+        if let Integer8Pair(higher, lower) = self {
+            let merged = Integer16(utils::combine_values(higher, lower));
+            return merged.try_add(rhs);
+        }
+
+        if let Integer8Pair(higher, lower) = rhs {
+            let merged = Integer16(utils::combine_values(higher, lower));
+            return merged.try_add(rhs);
+        }
+
+        if matches!(self, Integer8(_)) && matches!(rhs, Integer8(_)) {
+            // adding an Integer8 with an Integer8
+            let val_lhs = u8::try_from(self)?;
+            let val_rhs = u8::try_from(rhs)?;
+
+            Ok(Integer8(val_lhs + val_rhs))
+        } else if matches!(self, Integer16(_)) && matches!(rhs, Integer16(_)) {
+            // adding an Integer16 with an Integer16
+            let val_lhs = u16::from(self);
+            let val_rhs = u16::from(rhs);
+
+            Ok(Integer16(val_lhs + val_rhs))
+        } else {
+            Err(format!("Could not add RegisterValues {self:?} and {rhs:?}"))
+        }
+    }
 }
 
 // tests
