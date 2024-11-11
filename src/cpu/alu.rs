@@ -2,8 +2,9 @@
  * alu.rs - contains code relating to the arithmetic & logic unit (ALU)
  * see the datasheet: https://deramp.com/downloads/intel/8080%20Data%20Sheet.pdf
  */
-use super::instruction::InstructionCondition;
+use super::instruction::*;
 use super::registers::RegisterValue;
+use super::*;
 
 // AluFlags struct - holds the 5 ALU flags
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -77,6 +78,109 @@ pub enum AluOperation {
     Complement(RegisterValue),
     SetCarry,
     ComplementCarry,
+}
+
+impl AluOperation {
+    // converts an ALU-related Instruction to an ALUOperation
+    pub fn from_instruction(cpu: &mut Cpu, instruction: Instruction) -> Result<Self, String> {
+        match instruction {
+            Instruction::Add(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::Add(src_a_val, src_b_val))
+            }
+
+            Instruction::AddWithCarry(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::AddCarry(src_a_val, src_b_val))
+            }
+
+            Instruction::Subtract(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::Sub(src_a_val, src_b_val))
+            }
+
+            Instruction::SubtractWithBorrow(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::SubBorrow(src_a_val, src_b_val))
+            }
+
+            Instruction::Increment(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::Increment(src_val))
+            }
+
+            Instruction::Decrement(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::Decrement(src_val))
+            }
+
+            Instruction::DecimalAdjust(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::DecimalAdjust(src_val))
+            }
+
+            Instruction::BitwiseAnd(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::BitwiseAnd(src_a_val, src_b_val))
+            }
+
+            Instruction::BitwiseXor(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::BitwiseXor(src_a_val, src_b_val))
+            }
+
+            Instruction::BitwiseOr(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::BitwiseOr(src_a_val, src_b_val))
+            }
+
+            Instruction::Comparison(src_a, src_b) => {
+                let src_a_val = cpu.evaluate_source(src_a)?;
+                let src_b_val = cpu.evaluate_source(src_b)?;
+                Ok(Self::Comparison(src_a_val, src_b_val))
+            }
+
+            Instruction::RotateLeft(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::RotateLeft(src_val))
+            }
+
+            Instruction::RotateRight(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::RotateRight(src_val))
+            }
+
+            Instruction::RotateLeftThroughCarry(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::RotateLeftThroughCarry(src_val))
+            }
+
+            Instruction::RotateRightThroughCarry(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::RotateRightThroughCarry(src_val))
+            }
+
+            Instruction::Complement(src) => {
+                let src_val = cpu.evaluate_source(src)?;
+                Ok(Self::Complement(src_val))
+            }
+
+            Instruction::SetCarry => Ok(Self::SetCarry),
+
+            Instruction::ComplementCarry => Ok(Self::ComplementCarry),
+
+            _ => Err(format!(
+                "Not a valid ALU-related Instruction: {instruction:?}"
+            )),
+        }
+    }
 }
 
 // Alu struct - holds the registers inside of the ALU, has functions that
