@@ -355,6 +355,39 @@ impl Cpu {
             Ok(())
         }
     }
+
+    // pushes a value to the stack
+    pub fn push_to_stack(&mut self, value: RegisterValue) -> Result<(), String> {
+        // get the size of the value
+        let value_size = value.n_bytes() as u16;
+        
+        // decrease SP by the size of the value
+        let sp_decrement = RegisterValue::from(value_size.wrapping_neg());
+        let mut sp_val = self.reg_array.read_reg(Register::SP);
+        sp_val = sp_val.try_add(sp_decrement)?;
+        self.reg_array.write_reg(Register::SP, sp_val)?;
+
+        // write value to new SP
+        self.memory.write(sp_val, value)?;
+
+        Ok(())
+    }
+
+    // pops a value from the stack, returns it
+    pub fn pop_from_stack(&mut self, size: MemorySize) -> Result<RegisterValue, String> {
+        // read from SP
+        let mut sp_val = self.reg_array.read_reg(Register::SP);
+        let value = self.memory.read(sp_val, size)?;
+
+        // increase SP by size
+        let value_size = size.n_bytes() as u16;
+        let sp_increment = RegisterValue::from(value_size);
+        sp_val = sp_val.try_add(sp_increment)?;
+        self.reg_array.write_reg(Register::SP, sp_val)?;
+
+        // return the value
+        Ok(value)
+    }
 }
 
 #[cfg(test)]
@@ -557,6 +590,34 @@ mod tests {
                 MemorySize::Integer16
             ))
             .unwrap(),
+            RegisterValue::from(0x1234u16)
+        );
+    }
+
+    #[test]
+    fn cpu_stack_push_pop() {
+        let mut cpu = Cpu::new();
+
+        // set stack pointer to 0x1000 to start
+        cpu.reg_array.write_reg(Register::SP, RegisterValue::from(0x1000u16)).unwrap();
+
+        // push some arbitrary values, make sure they pop back off the same
+        cpu.push_to_stack(RegisterValue::from(0x1234u16)).unwrap();
+        cpu.push_to_stack(RegisterValue::from(0xAAu8)).unwrap();
+        cpu.push_to_stack(RegisterValue::from(0x5678u16)).unwrap();
+
+        assert_eq!(
+            cpu.pop_from_stack(MemorySize::Integer16).unwrap(),
+            RegisterValue::from(0x5678u16)
+        );
+
+        assert_eq!(
+            cpu.pop_from_stack(MemorySize::Integer8).unwrap(),
+            RegisterValue::from(0xAAu8)
+        );
+
+        assert_eq!(
+            cpu.pop_from_stack(MemorySize::Integer16).unwrap(),
             RegisterValue::from(0x1234u16)
         );
     }
