@@ -3,20 +3,14 @@ use cpu::instruction::*;
 use cpu::registers::*;
 use cpu::*;
 
-macro_rules! execute {
-    ($cpu:expr, $instr:expr) => {
-        ($cpu).execute(
-            Instruction::decode(
-                RegisterValue::from($instr)
-            ).unwrap()
-        ).unwrap()
-    }
-}
-
 fn main() {
     let mut cpu = Cpu::new();
 
-    execute!(cpu, 0x3Cu8);
+    cpu.load_to_memory(vec![0x01, 0xCD, 0xAB, 0xC6, 0x33, 0xD6, 0x03], 0).unwrap();
+
+    for _ in 0..3 {
+        cpu.execute_next().unwrap();
+    }
 
     println!("{cpu:#X?}");
 }
