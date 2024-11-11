@@ -36,6 +36,11 @@ impl Cpu {
         }
     }
 
+    // returns whether or not the CPU is running
+    pub fn is_running(&self) -> bool {
+        self.running
+    }
+
     // reads a RegisterValue at the current program counter, also increments
     // the program counter by an appropriate amount
     fn read_next(&mut self, size: MemorySize) -> Result<RegisterValue, String> {
