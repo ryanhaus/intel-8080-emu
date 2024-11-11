@@ -18,6 +18,7 @@ use registers::*;
 #[derive(Debug)]
 pub struct Cpu {
     running: bool,
+    interrupts_enabled: bool,
     reg_array: RegisterArray,
     alu: Alu,
     memory: Memory,
@@ -28,6 +29,7 @@ impl Cpu {
     pub fn new() -> Self {
         Self {
             running: true,
+            interrupts_enabled: true,
             reg_array: RegisterArray::new(),
             alu: Alu::new(),
             memory: Memory::new(),
@@ -322,6 +324,16 @@ impl Cpu {
 
                 self.write_to_source(src_a, val_b)?;
                 self.write_to_source(src_b, val_a)?;
+            }
+
+            // disable interrupts
+            DisableInterrupts => {
+                self.interrupts_enabled = false;
+            }
+
+            // enable interrupts
+            EnableInterrupts => {
+                self.interrupts_enabled = true;
             }
 
             _ => {}
