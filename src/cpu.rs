@@ -284,7 +284,9 @@ impl Cpu {
             | BitwiseAnd(_, _)
             | BitwiseXor(_, _)
             | BitwiseOr(_, _)
-            | Comparison(_, _) => {
+            | Comparison(_, _)
+            | SetCarry
+            | ComplementCarry => {
                 let alu_op = AluOperation::from_instruction(self, instruction)?;
 
                 self.alu.evaluate(alu_op)?;
