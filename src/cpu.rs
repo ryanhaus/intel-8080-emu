@@ -14,6 +14,16 @@ use instruction::*;
 use memory::*;
 use registers::*;
 
+// macro to help with debug output
+const DEBUG_OUTPUT: bool = true;
+macro_rules! dbg_println {
+    ( $x:expr ) => {
+        if DEBUG_OUTPUT {
+            println!($x);
+        }
+    }
+}
+
 // Cpu struct - holds all components of the CPU and has I/O functions
 #[derive(Debug)]
 pub struct Cpu {
@@ -211,7 +221,7 @@ impl Cpu {
 
     // executes an instruction
     pub fn execute(&mut self, instruction: Instruction) -> Result<(), String> {
-        println!("{instruction:?}");
+        dbg_println!("{instruction:?}");
 
         // make sure to update the status word before anything
         self.update_status_word()?;
