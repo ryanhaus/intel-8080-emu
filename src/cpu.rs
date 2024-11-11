@@ -202,6 +202,8 @@ impl Cpu {
 
     // executes an instruction
     pub fn execute(&mut self, instruction: Instruction) -> Result<(), String> {
+        println!("{instruction:?}");
+
         // make sure to update the status word before anything
         self.update_status_word()?;
 
