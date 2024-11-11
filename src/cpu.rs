@@ -248,6 +248,12 @@ impl Cpu {
                 self.write_to_source(source, result)?;
             }
 
+            // moves a value to another place
+            Move(dest, source) => {
+                let src_val = self.evaluate_source(source)?;
+                self.write_to_source(dest, src_val)?;
+            }
+
             _ => {}
         }
 
