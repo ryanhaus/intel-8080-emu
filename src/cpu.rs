@@ -315,6 +315,15 @@ impl Cpu {
                 }
             }
 
+            // exchange instruction
+            Exchange(src_a, src_b) => {
+                let val_a = self.evaluate_source(src_a.clone())?;
+                let val_b = self.evaluate_source(src_b.clone())?;
+
+                self.write_to_source(src_a, val_b)?;
+                self.write_to_source(src_b, val_a)?;
+            }
+
             _ => {}
         }
 
