@@ -301,6 +301,20 @@ impl Cpu {
                 self.running = false;
             }
 
+            // unconditional jump
+            Jump => {
+                let addr = self.read_next(MemorySize::Integer16)?;
+                self.reg_array.write_reg(Register::PC, addr)?;
+            }
+
+            // conditional jump
+            JumpConditional(condition) => {
+                if self.alu.flags().evaluate_condition(condition) {
+                    let addr = self.read_next(MemorySize::Integer16)?;
+                    self.reg_array.write_reg(Register::PC, addr)?;
+                }
+            }
+
             _ => {}
         }
 
