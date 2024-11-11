@@ -183,6 +183,76 @@ impl Cpu {
 
         Ok(())
     }
+
+    // executes an instruction
+    pub fn execute(&mut self, instruction: Instruction) -> Result<(), String> {
+        // make sure to update the status word before anything
+        self.update_status_word()?;
+
+        // handle the instruction
+        use Instruction::*;
+        match instruction {
+            // no operation, do nothing
+            Nop => {}
+
+            // loads an immediate value to a destination
+            Load(dest) => {
+                let imm_size = MemorySize::from_bytes(dest.n_bytes()?)?;
+                let imm_val = self.read_next(imm_size)?;
+                self.write_to_source(dest, imm_val)?;
+            }
+
+            // stores a value to an immediate address
+            Store(source) => {
+                let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
+                let addr = self.read_next(MemorySize::Integer16)?;
+                let dest = InstructionSource::Memory(MemorySource::Address(addr), src_size);
+                let value = self.evaluate_source(source)?;
+
+                self.write_to_source(dest, value)?;
+            }
+
+            // increments a value
+            Increment(source) => {
+                let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
+                let rhs = match src_size {
+                    MemorySize::Integer8 => RegisterValue::from(1u8),
+                    MemorySize::Integer16 => RegisterValue::from(1u16),
+                };
+
+                let sum = InstructionSource::Sum(
+                    Box::new(source.clone()),
+                    Box::new(InstructionSource::Value(rhs))
+                );
+
+                let result = self.evaluate_source(sum)?;
+
+                self.write_to_source(source, result)?;
+            }
+
+            // decrements a value
+            Decrement(source) => {
+                let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
+                let rhs = match src_size {
+                    MemorySize::Integer8 => RegisterValue::from(1u8.wrapping_neg()),
+                    MemorySize::Integer16 => RegisterValue::from(1u16.wrapping_neg()),
+                };
+
+                let sum = InstructionSource::Sum(
+                    Box::new(source.clone()),
+                    Box::new(InstructionSource::Value(rhs))
+                );
+
+                let result = self.evaluate_source(sum)?;
+
+                self.write_to_source(source, result)?;
+            }
+
+            _ => {}
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

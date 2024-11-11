@@ -3,21 +3,20 @@ use cpu::instruction::*;
 use cpu::registers::*;
 use cpu::*;
 
+macro_rules! execute {
+    ($cpu:expr, $instr:expr) => {
+        ($cpu).execute(
+            Instruction::decode(
+                RegisterValue::from($instr)
+            ).unwrap()
+        ).unwrap()
+    }
+}
+
 fn main() {
     let mut cpu = Cpu::new();
 
-    for i in 0..=255 {
-        let opcode = i as u8;
-        let decoded = Instruction::decode(RegisterValue::from(opcode));
+    execute!(cpu, 0x3Cu8);
 
-        match decoded {
-            Ok(instr) => {
-                println!("{i:08b} ({i:02X}):\n{instr:#?}\n");
-            }
-
-            Err(message) => {
-                println!("{i:08b} ({i:02X}): ERROR {message}\n");
-            }
-        }
-    }
+    println!("{cpu:#X?}");
 }
