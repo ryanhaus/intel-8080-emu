@@ -270,6 +270,26 @@ impl Cpu {
                 self.write_to_source(dest, src_val)?;
             }
 
+            // ALU operations
+            RotateLeft(_)
+            | RotateRight(_)
+            | RotateLeftThroughCarry(_)
+            | RotateRightThroughCarry(_)
+            | DecimalAdjust(_)
+            | Complement(_)
+            | Add(_, _)
+            | AddWithCarry(_, _)
+            | Subtract(_, _)
+            | SubtractWithBorrow(_, _)
+            | BitwiseAnd(_, _)
+            | BitwiseXor(_, _)
+            | BitwiseOr(_, _)
+            | Comparison(_, _) => {
+                let alu_op = AluOperation::from_instruction(self, instruction)?;
+
+                self.alu.evaluate(alu_op)?;
+            }
+
             _ => {}
         }
 
