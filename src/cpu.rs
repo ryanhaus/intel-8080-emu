@@ -15,6 +15,7 @@ use memory::*;
 use registers::*;
 
 // Cpu struct - holds all components of the CPU and has I/O functions
+#[derive(Debug)]
 pub struct Cpu {
     reg_array: RegisterArray,
     alu: Alu,

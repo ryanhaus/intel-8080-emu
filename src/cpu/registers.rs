@@ -10,6 +10,7 @@ use std::{
 };
 
 // RegisterArray struct - contains all register values
+#[derive(Debug)]
 pub struct RegisterArray {
     program_counter: u16, // 16-bit program counter
     stack_pointer: u16,   // 16-bit stack pointer

@@ -81,6 +81,7 @@ pub enum AluOperation {
 
 // Alu struct - holds the registers inside of the ALU, has functions that
 // perform ALU operations
+#[derive(Debug)]
 pub struct Alu {
     accumulator: RegisterValue, // 8-bit accumulator register
     flags: AluFlags,            // 5-bit flags register

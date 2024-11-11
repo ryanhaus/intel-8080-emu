@@ -38,6 +38,17 @@ pub struct Memory {
     data: [u8; 0x10000], // supports 64KB of memory
 }
 
+impl std::fmt::Debug for Memory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let width_bytes = 16;
+
+        let mut mem_str = String::new();
+        mem_str.push_str("");
+
+        f.write_str(&mem_str)
+    }
+}
+
 impl Memory {
     // creates a new empty instance of Memory
     pub fn new() -> Self {
