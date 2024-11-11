@@ -186,9 +186,12 @@ impl Cpu {
 
     // loads a vector of u8s to memory
     pub fn load_to_memory(&mut self, data: Vec<u8>, start_addr: u16) -> Result<(), String> {
-        let writes = data.iter()
-            .enumerate()
-            .map(|(i, val)| ( RegisterValue::from(i as u16 + start_addr), RegisterValue::from(*val) ));
+        let writes = data.iter().enumerate().map(|(i, val)| {
+            (
+                RegisterValue::from(i as u16 + start_addr),
+                RegisterValue::from(*val),
+            )
+        });
 
         for (addr, val) in writes {
             self.memory.write(addr, val)?;
@@ -235,7 +238,7 @@ impl Cpu {
 
                 let sum = InstructionSource::Sum(
                     Box::new(source.clone()),
-                    Box::new(InstructionSource::Value(rhs))
+                    Box::new(InstructionSource::Value(rhs)),
                 );
 
                 let result = self.evaluate_source(sum)?;
@@ -253,7 +256,7 @@ impl Cpu {
 
                 let sum = InstructionSource::Sum(
                     Box::new(source.clone()),
-                    Box::new(InstructionSource::Value(rhs))
+                    Box::new(InstructionSource::Value(rhs)),
                 );
 
                 let result = self.evaluate_source(sum)?;

@@ -408,15 +408,15 @@ impl Instruction {
 
 #[cfg(test)]
 mod tests {
+    use super::super::registers::Register::*;
     use super::*;
     use Instruction::*;
-    use super::super::registers::Register::*;
     use InstructionSource::*;
 
     macro_rules! instr_decode {
         ($instr:expr) => {
             Instruction::decode(RegisterValue::from($instr)).unwrap()
-        }
+        };
     }
 
     #[test]
