@@ -17,6 +17,7 @@ use registers::*;
 // Cpu struct - holds all components of the CPU and has I/O functions
 #[derive(Debug)]
 pub struct Cpu {
+    running: bool,
     reg_array: RegisterArray,
     alu: Alu,
     memory: Memory,
@@ -26,6 +27,7 @@ impl Cpu {
     // creates a new empty instance of the Cpu struct
     pub fn new() -> Self {
         Self {
+            running: true,
             reg_array: RegisterArray::new(),
             alu: Alu::new(),
             memory: Memory::new(),
@@ -294,6 +296,11 @@ impl Cpu {
                 self.alu.evaluate(alu_op)?;
             }
 
+            // halt the processor
+            Halt => {
+                self.running = false;
+            }
+
             _ => {}
         }
 
@@ -306,8 +313,12 @@ impl Cpu {
 
     // executes the next instruction in memory
     pub fn execute_next(&mut self) -> Result<(), String> {
-        let instruction = self.decode_next_instruction();
-        self.execute(instruction?)
+        if self.running {
+            let instruction = self.decode_next_instruction();
+            self.execute(instruction?)
+        } else {
+            Ok(())
+        }
     }
 }
 
