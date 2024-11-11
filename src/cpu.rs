@@ -293,6 +293,10 @@ impl Cpu {
             _ => {}
         }
 
+        // update the status word again
+        self.update_status_word()?;
+
+        // if we get here, execution was ok
         Ok(())
     }
 
