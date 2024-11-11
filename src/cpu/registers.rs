@@ -277,13 +277,13 @@ impl RegisterValue {
             let val_lhs = u8::try_from(self)?;
             let val_rhs = u8::try_from(rhs)?;
 
-            Ok(Integer8(val_lhs + val_rhs))
+            Ok(Integer8(val_lhs.wrapping_add(val_rhs)))
         } else if matches!(self, Integer16(_)) && matches!(rhs, Integer16(_)) {
             // adding an Integer16 with an Integer16
             let val_lhs = u16::from(self);
             let val_rhs = u16::from(rhs);
 
-            Ok(Integer16(val_lhs + val_rhs))
+            Ok(Integer16(val_lhs.wrapping_add(val_rhs)))
         } else {
             Err(format!("Could not add RegisterValues {self:?} and {rhs:?}"))
         }
