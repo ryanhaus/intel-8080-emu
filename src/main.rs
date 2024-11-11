@@ -6,7 +6,8 @@ use cpu::*;
 fn main() {
     let mut cpu = Cpu::new();
 
-    cpu.load_to_memory(vec![0x01, 0xCD, 0xAB, 0xC6, 0x33, 0xD6, 0x03], 0).unwrap();
+    cpu.load_to_memory(vec![0x01, 0xCD, 0xAB, 0xC6, 0x33, 0xD6, 0x03], 0)
+        .unwrap();
 
     for _ in 0..3 {
         cpu.execute_next().unwrap();

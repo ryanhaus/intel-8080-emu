@@ -420,6 +420,5 @@ mod tests {
     }
 
     #[test]
-    fn instruction_decode() {
-    }
+    fn instruction_decode() {}
 }
