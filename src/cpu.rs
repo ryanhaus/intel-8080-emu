@@ -16,6 +16,14 @@ use registers::*;
 
 // macro to help with debug output
 const DEBUG_OUTPUT: bool = true;
+
+macro_rules! dbg_print {
+    ( $x:expr ) => {
+        if DEBUG_OUTPUT {
+            print!($x);
+        }
+    }
+}
 macro_rules! dbg_println {
     ( $x:expr ) => {
         if DEBUG_OUTPUT {
@@ -67,20 +75,25 @@ impl Cpu {
             .write_reg(Register::PC, RegisterValue::from(new_pc_val))?;
 
         // return the read value
+        dbg_println!("read_next: Read {value:X?} from {pc_val:X?}, updated PC to {new_pc_val:X?}");
         Ok(value)
     }
 
     // decodes the instruction at the current program counter into an Instruction enum
     fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
         let instruction = self.read_next(MemorySize::Integer8)?;
-        Instruction::decode(instruction)
+        let instruction = Instruction::decode(instruction)?;
+
+        dbg_println!("decode_next_instruction: {instruction:?}");
+
+        Ok(instruction)
     }
 
     // evaluates the value of a InstructionSource into a RegisterValue
     fn evaluate_source(&mut self, source: InstructionSource) -> Result<RegisterValue, String> {
         use InstructionSource::*;
 
-        match source {
+        let value = match source {
             // if the source value is contained in memory
             Memory(memory_source, size) => {
                 use MemorySource::*;
@@ -119,7 +132,9 @@ impl Cpu {
 
             // if the source is a value
             Value(value) => Ok(value),
-        }
+        };
+
+        value
     }
 
     // writes a RegisterValue to an InstructionSource
@@ -221,8 +236,6 @@ impl Cpu {
 
     // executes an instruction
     pub fn execute(&mut self, instruction: Instruction) -> Result<(), String> {
-        dbg_println!("{instruction:?}");
-
         // make sure to update the status word before anything
         self.update_status_word()?;
 
@@ -236,6 +249,8 @@ impl Cpu {
             Load(dest) => {
                 let imm_size = MemorySize::from_bytes(dest.n_bytes()?)?;
                 let imm_val = self.read_next(imm_size)?;
+                dbg_println!("execute (Load): {imm_val:X?} -> {dest:?}");
+
                 self.write_to_source(dest, imm_val)?;
             }
 
@@ -245,6 +260,7 @@ impl Cpu {
                 let addr = self.read_next(MemorySize::Integer16)?;
                 let dest = InstructionSource::Memory(MemorySource::Address(addr), src_size);
                 let value = self.evaluate_source(source)?;
+                dbg_println!("execute (Store): {value:X?} -> {dest:?}");
 
                 self.write_to_source(dest, value)?;
             }
@@ -264,6 +280,8 @@ impl Cpu {
 
                 let result = self.evaluate_source(sum)?;
 
+                dbg_println!("execute (Increment): {result:X?} -> {source:?}");
+
                 self.write_to_source(source, result)?;
             }
 
@@ -282,12 +300,17 @@ impl Cpu {
 
                 let result = self.evaluate_source(sum)?;
 
+                dbg_println!("execute (Decrement): {result:X?} -> {source:?}");
+
                 self.write_to_source(source, result)?;
             }
 
             // moves a value to another place
             Move(dest, source) => {
                 let src_val = self.evaluate_source(source)?;
+
+                dbg_println!("execute (Move): {src_val:X?} -> {dest:?}");
+
                 self.write_to_source(dest, src_val)?;
             }
 
@@ -310,26 +333,108 @@ impl Cpu {
             | ComplementCarry => {
                 let alu_op = AluOperation::from_instruction(self, instruction)?;
 
+                dbg_println!("execute (ALU operation): evaluating {alu_op:X?}");
+
                 self.alu.evaluate(alu_op)?;
+            }
+
+            // conditional return
+            ReturnConditional(condition) => {
+                if self.alu.flags().evaluate_condition(condition) {
+                    // pop into PC
+                    let new_pc = self.pop_from_stack(MemorySize::Integer16)?;
+                    dbg_println!("execute (ReturnConditional): {new_pc:X?} -> PC");
+                    self.reg_array.write_reg(Register::PC, new_pc)?;
+                } else {
+                    dbg_println!("execute (ReturnConditional): branch not taken");
+                }
             }
 
             // halt the processor
             Halt => {
+                dbg_println!("execute (Halt): halted the processor");
                 self.running = false;
             }
 
-            // unconditional jump
-            Jump => {
-                let addr = self.read_next(MemorySize::Integer16)?;
-                self.reg_array.write_reg(Register::PC, addr)?;
+            // stack pop
+            StackPop(dest) => {
+                let pop_size = MemorySize::from_bytes(dest.n_bytes()?)?;
+                let stack_val = self.pop_from_stack(pop_size)?;
+                dbg_println!("execute (StackPop): {stack_val:X?} -> {dest:?}");
+
+                self.write_to_source(dest, stack_val)?;
             }
 
             // conditional jump
             JumpConditional(condition) => {
                 if self.alu.flags().evaluate_condition(condition) {
                     let addr = self.read_next(MemorySize::Integer16)?;
+                    dbg_println!("execute (JumpConditional): branch taken, {addr:X?} -> PC");
                     self.reg_array.write_reg(Register::PC, addr)?;
+                } else {
+                    dbg_println!("execute (JumpConditional): branch not taken");
                 }
+            }
+
+            // unconditional jump
+            Jump => {
+                let addr = self.read_next(MemorySize::Integer16)?;
+
+                dbg_println!("execute (Jump): {addr:X?} -> PC");
+
+                self.reg_array.write_reg(Register::PC, addr)?;
+            }
+
+            // conditional call
+            CallConditional(condition) => {
+                if self.alu.flags().evaluate_condition(condition) {
+                    let addr = self.read_next(MemorySize::Integer16)?;
+                    dbg_println!("execute (CallConditional): branch taken, PC -> stack, {addr:X?} -> PC");
+                    
+                    let pc_val = self.reg_array.read_reg(Register::PC);
+                    self.push_to_stack(pc_val)?;
+
+                    self.reg_array.write_reg(Register::PC, addr)?;
+                } else {
+                    dbg_println!("execute (CallConditional): branch not taken");
+                }
+            }
+
+            // push to stack
+            StackPush(source) => {
+                let value = self.evaluate_source(source)?;
+                dbg_println!("execute (StackPush): {value:X?} -> stack");
+                
+                self.push_to_stack(value)?;
+            }
+
+            // reset
+            Reset(n) => {
+                let n = self.evaluate_source(n)?;
+                let n = u16::from(n);
+                let new_pc = RegisterValue::from(n * 8);
+                dbg_println!("execute (Reset): {new_pc:X?} -> PC");
+
+                self.reg_array.write_reg(Register::PC, new_pc)?;
+            }
+
+            // unconditional return
+            Return => {
+                // pop into PC
+                let new_pc = self.pop_from_stack(MemorySize::Integer16)?;
+                dbg_println!("execute (Return): {new_pc:X?} -> PC");
+                self.reg_array.write_reg(Register::PC, new_pc)?;
+            }
+
+            // unconditional call
+            Call => {
+                let addr = self.read_next(MemorySize::Integer16)?;
+                dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
+                
+                let pc_val = self.reg_array.read_reg(Register::PC);
+                self.push_to_stack(pc_val)?;
+
+                self.reg_array.write_reg(Register::PC, addr)?;
             }
 
             // exchange instruction
@@ -337,21 +442,27 @@ impl Cpu {
                 let val_a = self.evaluate_source(src_a.clone())?;
                 let val_b = self.evaluate_source(src_b.clone())?;
 
+                dbg_println!("execute (Exchange): {val_a:X?} -> {src_b:?}, {val_b:X?} -> {src_a:?}");
+
                 self.write_to_source(src_a, val_b)?;
                 self.write_to_source(src_b, val_a)?;
             }
 
             // disable interrupts
             DisableInterrupts => {
+                dbg_println!("execute (DisableInterrupts): interrupts disabled");
                 self.interrupts_enabled = false;
             }
 
             // enable interrupts
             EnableInterrupts => {
+                dbg_println!("execute (EnableInterrupts): interrupts enabled");
                 self.interrupts_enabled = true;
             }
 
-            _ => {}
+            IoOut | IoIn => {
+                return Err(format!("Unimplemented instruction: {instruction:?}"));
+            }
         }
 
         // update the status word again
