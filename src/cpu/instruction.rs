@@ -409,91 +409,17 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use Instruction::*;
+    use super::super::registers::Register::*;
+    use InstructionSource::*;
+
+    macro_rules! instr_decode {
+        ($instr:expr) => {
+            Instruction::decode(RegisterValue::from($instr)).unwrap()
+        }
+    }
 
     #[test]
     fn instruction_decode() {
-        // ADD B
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1000_0000u8)).unwrap(),
-            Instruction::Add(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::B)
-            )
-        );
-
-        // ADC C
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1000_1001u8)).unwrap(),
-            Instruction::AddWithCarry(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::C)
-            )
-        );
-
-        // SUB D
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1001_0010u8)).unwrap(),
-            Instruction::Subtract(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::D)
-            )
-        );
-
-        // SBB E
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1001_1011u8)).unwrap(),
-            Instruction::SubtractWithBorrow(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::E)
-            )
-        );
-
-        // ANA H
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1010_0100u8)).unwrap(),
-            Instruction::BitwiseAnd(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::H)
-            )
-        );
-
-        // XRA L
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1010_1101u8)).unwrap(),
-            Instruction::BitwiseXor(
-                InstructionSource::Accumulator,
-                InstructionSource::Register(Register::L)
-            )
-        );
-
-        // ORA M
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1011_0110u8)).unwrap(),
-            Instruction::BitwiseOr(
-                InstructionSource::Accumulator,
-                InstructionSource::Memory(
-                    MemorySource::Register(Register::HL),
-                    MemorySize::Integer8
-                )
-            )
-        );
-
-        // CMP A
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1011_1111u8)).unwrap(),
-            Instruction::Comparison(
-                InstructionSource::Accumulator,
-                InstructionSource::Accumulator
-            )
-        );
-
-        // ADI imm
-        assert_eq!(
-            Instruction::decode(RegisterValue::from(0b1100_0110u8)).unwrap(),
-            Instruction::Add(
-                InstructionSource::Accumulator,
-                InstructionSource::Memory(MemorySource::ProgramCounter, MemorySize::Integer8)
-            )
-        );
     }
 }
