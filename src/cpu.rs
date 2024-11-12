@@ -22,14 +22,14 @@ macro_rules! dbg_print {
         if DEBUG_OUTPUT {
             print!($x);
         }
-    }
+    };
 }
 macro_rules! dbg_println {
     ( $x:expr ) => {
         if DEBUG_OUTPUT {
             println!($x);
         }
-    }
+    };
 }
 
 // Cpu struct - holds all components of the CPU and has I/O functions
@@ -389,8 +389,10 @@ impl Cpu {
             CallConditional(condition) => {
                 if self.alu.flags().evaluate_condition(condition) {
                     let addr = self.read_next(MemorySize::Integer16)?;
-                    dbg_println!("execute (CallConditional): branch taken, PC -> stack, {addr:X?} -> PC");
-                    
+                    dbg_println!(
+                        "execute (CallConditional): branch taken, PC -> stack, {addr:X?} -> PC"
+                    );
+
                     let pc_val = self.reg_array.read_reg(Register::PC);
                     self.push_to_stack(pc_val)?;
 
@@ -404,7 +406,7 @@ impl Cpu {
             StackPush(source) => {
                 let value = self.evaluate_source(source)?;
                 dbg_println!("execute (StackPush): {value:X?} -> stack");
-                
+
                 self.push_to_stack(value)?;
             }
 
@@ -430,7 +432,7 @@ impl Cpu {
             Call => {
                 let addr = self.read_next(MemorySize::Integer16)?;
                 dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
-                
+
                 let pc_val = self.reg_array.read_reg(Register::PC);
                 self.push_to_stack(pc_val)?;
 
@@ -442,7 +444,9 @@ impl Cpu {
                 let val_a = self.evaluate_source(src_a.clone())?;
                 let val_b = self.evaluate_source(src_b.clone())?;
 
-                dbg_println!("execute (Exchange): {val_a:X?} -> {src_b:?}, {val_b:X?} -> {src_a:?}");
+                dbg_println!(
+                    "execute (Exchange): {val_a:X?} -> {src_b:?}, {val_b:X?} -> {src_a:?}"
+                );
 
                 self.write_to_source(src_a, val_b)?;
                 self.write_to_source(src_b, val_a)?;
@@ -486,7 +490,7 @@ impl Cpu {
     pub fn push_to_stack(&mut self, value: RegisterValue) -> Result<(), String> {
         // get the size of the value
         let value_size = value.n_bytes() as u16;
-        
+
         // decrease SP by the size of the value
         let sp_decrement = RegisterValue::from(value_size.wrapping_neg());
         let mut sp_val = self.reg_array.read_reg(Register::SP);
@@ -725,7 +729,9 @@ mod tests {
         let mut cpu = Cpu::new();
 
         // set stack pointer to 0x1000 to start
-        cpu.reg_array.write_reg(Register::SP, RegisterValue::from(0x1000u16)).unwrap();
+        cpu.reg_array
+            .write_reg(Register::SP, RegisterValue::from(0x1000u16))
+            .unwrap();
 
         // push some arbitrary values, make sure they pop back off the same
         cpu.push_to_stack(RegisterValue::from(0x1234u16)).unwrap();

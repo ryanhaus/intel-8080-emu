@@ -14,6 +14,6 @@ fn main() {
     while cpu.is_running() {
         cpu.execute_next().unwrap();
     }
-    
+
     println!("{cpu:#X?}\n");
 }
