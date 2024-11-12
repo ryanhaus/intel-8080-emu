@@ -441,6 +441,22 @@ impl Cpu {
                 self.reg_array.write_reg(Register::PC, addr)?;
             }
 
+            // IO output
+            IoOut => {
+                let port = self.read_next(MemorySize::Integer8)?;
+                let a_val = self.alu.accumulator();
+
+                self.write_to_port(port, a_val)?;
+            }
+
+            // IO input
+            IoIn => {
+                let port = self.read_next(MemorySize::Integer8)?;
+                let port_val = self.read_port(port)?;
+
+                self.alu.write_accumulator(port_val)?;
+            }
+
             // exchange instruction
             Exchange(src_a, src_b) => {
                 let val_a = self.evaluate_source(src_a.clone())?;
@@ -464,10 +480,6 @@ impl Cpu {
             EnableInterrupts => {
                 dbg_println!("execute (EnableInterrupts): interrupts enabled");
                 self.interrupts_enabled = true;
-            }
-
-            IoOut | IoIn => {
-                return Err(format!("Unimplemented instruction: {instruction:?}"));
             }
         }
 
