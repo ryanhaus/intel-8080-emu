@@ -40,6 +40,7 @@ pub struct Cpu {
     reg_array: RegisterArray,
     alu: Alu,
     memory: Memory,
+    ports: [RegisterValue; 0x100],
 }
 
 impl Cpu {
@@ -51,6 +52,7 @@ impl Cpu {
             reg_array: RegisterArray::new(),
             alu: Alu::new(),
             memory: Memory::new(),
+            ports: [RegisterValue::from(0u8); 256],
         }
     }
 
@@ -517,6 +519,32 @@ impl Cpu {
 
         // return the value
         Ok(value)
+    }
+
+    // writes a value to a port
+    pub fn write_to_port(
+        &mut self,
+        port: RegisterValue,
+        value: RegisterValue,
+    ) -> Result<(), String> {
+        if port.n_bytes() != 1 || value.n_bytes() != 1 {
+            return Err(String::from("Port IDs and port values are 8 bits"));
+        }
+
+        let port_id = u8::try_from(port)? as usize;
+        self.ports[port_id] = value;
+
+        Ok(())
+    }
+
+    // reads a value from a port
+    pub fn read_port(&self, port: RegisterValue) -> Result<RegisterValue, String> {
+        if port.n_bytes() != 1 {
+            return Err(String::from("Port IDs are 8 bits"));
+        }
+
+        let port_id = u8::try_from(port)? as usize;
+        Ok(self.ports[port_id])
     }
 }
 
