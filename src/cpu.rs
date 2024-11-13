@@ -32,6 +32,11 @@ macro_rules! dbg_println {
     };
 }
 
+// PortHandlerFn - type of a function that handles a port write
+// when a port gets written to, this function gets called with the port as the
+// first argument, and the value written as the second.
+type PortHandlerFn = fn(RegisterValue, RegisterValue);
+
 // Cpu struct - holds all components of the CPU and has I/O functions
 #[derive(Debug)]
 pub struct Cpu {
@@ -41,6 +46,7 @@ pub struct Cpu {
     alu: Alu,
     memory: Memory,
     ports: [RegisterValue; 0x100],
+    port_handler_fn: Option<PortHandlerFn>,
 }
 
 impl Cpu {
@@ -53,6 +59,7 @@ impl Cpu {
             alu: Alu::new(),
             memory: Memory::new(),
             ports: [RegisterValue::from(0u8); 256],
+            port_handler_fn: None,
         }
     }
 
@@ -447,6 +454,11 @@ impl Cpu {
                 let a_val = self.alu.accumulator();
 
                 self.write_to_port(port, a_val)?;
+
+                // if there is a port handler function, call it
+                if let Some(port_handler_fn) = self.port_handler_fn {
+                    port_handler_fn(port, a_val);
+                }
             }
 
             // IO input
@@ -557,6 +569,11 @@ impl Cpu {
 
         let port_id = u8::try_from(port)? as usize;
         Ok(self.ports[port_id])
+    }
+
+    // sets the port write handler function
+    pub fn set_port_handler_fn(&mut self, port_handler_fn: PortHandlerFn) {
+        self.port_handler_fn = Some(port_handler_fn);
     }
 }
 
