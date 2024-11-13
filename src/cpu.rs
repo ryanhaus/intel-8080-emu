@@ -79,7 +79,7 @@ impl Cpu {
 
         // increment the program counter by an appropriate amount
         let pc_inc_val = size.n_bytes() as u16;
-        let new_pc_val = u16::from(pc_val) + pc_inc_val;
+        let new_pc_val = u16::from(pc_val).wrapping_add(pc_inc_val);
         self.reg_array
             .write_reg(Register::PC, RegisterValue::from(new_pc_val))?;
 
