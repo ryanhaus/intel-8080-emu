@@ -376,8 +376,8 @@ impl Cpu {
 
             // conditional jump
             JumpConditional(condition) => {
+                let addr = self.read_next(MemorySize::Integer16)?;
                 if self.alu.flags().evaluate_condition(condition) {
-                    let addr = self.read_next(MemorySize::Integer16)?;
                     dbg_println!("execute (JumpConditional): branch taken, {addr:X?} -> PC");
                     self.reg_array.write_reg(Register::PC, addr)?;
                 } else {
@@ -396,8 +396,8 @@ impl Cpu {
 
             // conditional call
             CallConditional(condition) => {
+                let addr = self.read_next(MemorySize::Integer16)?;
                 if self.alu.flags().evaluate_condition(condition) {
-                    let addr = self.read_next(MemorySize::Integer16)?;
                     dbg_println!(
                         "execute (CallConditional): branch taken, PC -> stack, {addr:X?} -> PC"
                     );
