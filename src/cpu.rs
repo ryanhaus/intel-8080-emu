@@ -248,6 +248,14 @@ impl Cpu {
         // make sure to update the status word before anything
         self.update_status_word()?;
 
+        // if PC == 0x0006 (meaning that the instruction was read from 0x0005),
+        // then the CP/M BDOS subroutine should be called
+        if self.reg_array.read_reg(Register::PC) == RegisterValue::from(0x0006u16) {
+            dbg_println!("execute (CP/M BDOS Subroutine)");
+            self.cpm_bdos_subroutine()?;
+            return Ok(());
+        }
+
         // handle the instruction
         use Instruction::*;
         match instruction {
@@ -577,6 +585,53 @@ impl Cpu {
     // sets the port write handler function
     pub fn set_port_handler_fn(&mut self, port_handler_fn: PortHandlerFn) {
         self.port_handler_fn = Some(port_handler_fn);
+    }
+
+    // performs the CP/M BDOS subroutine (0x0005)
+    fn cpm_bdos_subroutine(&mut self) -> Result<(), String> {
+        // 0x05 subroutine:
+        //  if C == 9:
+        //      output string starting at (DE) until $ character is found
+        //  if C == 2:
+        //      output single character in E
+
+        match self.reg_array.read_reg(Register::C) {
+            // C == 9: output string starting at (DE) until $ character is found
+            RegisterValue::Integer8(9) => {
+                // store mutable copy of DE, which will be used as the pointer
+                let mut str_pointer = self.reg_array.read_reg(Register::DE).clone();
+
+                // until a $ character is found, output the string
+                loop {
+                    // get the current character
+                    let current_char = self.memory.read(str_pointer, MemorySize::Integer8)?;
+
+                    // break condition: character is '$'
+                    if current_char == RegisterValue::from('$' as u8) {
+                        break;
+                    }
+
+                    // write to port, increase pointer
+                    self.write_to_port(RegisterValue::from(0u8), current_char)?;
+                    str_pointer = str_pointer.try_add(RegisterValue::from(1u16))?;
+                }
+            }
+
+            // C == 2: output single character in E
+            RegisterValue::Integer8(2) => {
+                let e_val = self.reg_array.read_reg(Register::E);
+                self.write_to_port(RegisterValue::from(0u8), e_val)?;
+            }
+
+            // otherwise, do nothing
+            _ => {}
+        }
+
+        // increase PC, do a RET
+        self.read_next(MemorySize::Integer8)?;
+        self.execute(Instruction::Return)?;
+
+        Ok(())
     }
 }
 
