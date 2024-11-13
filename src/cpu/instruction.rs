@@ -171,7 +171,13 @@ impl Instruction {
                     return Err(String::from("STAX [rp] is only valid for BC or DE"));
                 }
 
-                Ok(Instruction::Store(InstructionSource::Register(reg_pair)))
+                Ok(Instruction::Move(
+                        InstructionSource::Memory(
+                            MemorySource::Register(reg_pair),
+                            MemorySize::Integer16
+                        ),
+                        InstructionSource::Register(reg_pair)
+                ))
             }
 
             // INX rp: RP <- RP + 1
