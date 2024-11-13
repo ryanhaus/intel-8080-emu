@@ -220,7 +220,13 @@ impl Instruction {
                     return Err(String::from("LDAX [rp] is only valid for BC or DE"));
                 }
 
-                Ok(Instruction::Load(InstructionSource::Register(reg_pair)))
+                Ok(Instruction::Move(
+                        InstructionSource::Accumulator,
+                        InstructionSource::Memory(
+                            MemorySource::Register(reg_pair),
+                            MemorySize::Integer8
+                        )
+                ))
             }
 
             // DCX rp: RP <- RP - 1
