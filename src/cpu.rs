@@ -454,11 +454,6 @@ impl Cpu {
                 let a_val = self.alu.accumulator();
 
                 self.write_to_port(port, a_val)?;
-
-                // if there is a port handler function, call it
-                if let Some(port_handler_fn) = self.port_handler_fn {
-                    port_handler_fn(port, a_val);
-                }
             }
 
             // IO input
@@ -557,6 +552,11 @@ impl Cpu {
 
         let port_id = u8::try_from(port)? as usize;
         self.ports[port_id] = value;
+        
+        // if there is a port handler function, call it
+        if let Some(port_handler_fn) = self.port_handler_fn {
+            port_handler_fn(port, value);
+        }
 
         Ok(())
     }
