@@ -269,7 +269,7 @@ impl RegisterValue {
 
         if let Integer8Pair(higher, lower) = rhs {
             let merged = Integer16(utils::combine_values(higher, lower));
-            return merged.try_add(rhs);
+            return self.try_add(merged);
         }
 
         if matches!(self, Integer8(_)) && matches!(rhs, Integer8(_)) {
