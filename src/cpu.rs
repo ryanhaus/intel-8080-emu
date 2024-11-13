@@ -521,7 +521,7 @@ impl Cpu {
         sp_val = sp_val.try_add(sp_decrement)?;
         self.reg_array.write_reg(Register::SP, sp_val)?;
 
-        // write value to new SP
+        // write value to (SP)
         self.memory.write(sp_val, value)?;
 
         Ok(())
