@@ -15,7 +15,7 @@ use memory::*;
 use registers::*;
 
 // macro to help with debug output
-const DEBUG_OUTPUT: bool = true;
+const DEBUG_OUTPUT: bool = false;
 
 macro_rules! dbg_print {
     ( $x:expr ) => {
