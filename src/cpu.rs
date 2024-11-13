@@ -254,10 +254,13 @@ impl Cpu {
             // no operation, do nothing
             Nop => {}
 
-            // loads an immediate value to a destination
+            // loads a value from the immediate address to the destination
             Load(dest) => {
+                let addr = self.read_next(MemorySize::Integer16)?;
+
                 let imm_size = MemorySize::from_bytes(dest.n_bytes()?)?;
-                let imm_val = self.read_next(imm_size)?;
+                let imm_val = self.memory.read(addr, imm_size)?;
+
                 dbg_println!("execute (Load): {imm_val:X?} -> {dest:?}");
 
                 self.write_to_source(dest, imm_val)?;
