@@ -344,11 +344,6 @@ impl Alu {
             }
         };
 
-        // set the accumulator register (if applicable), return result
-        if let Some(result) = result {
-            self.accumulator = result;
-        }
-
         Ok(result)
     }
 

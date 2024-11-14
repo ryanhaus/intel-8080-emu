@@ -366,6 +366,7 @@ impl Cpu {
                 let result = self.alu.evaluate(alu_op)?;
 
                 if let Some(result) = result {
+                    self.alu.write_accumulator(result)?;
                     dbg_print!("{result:X?} -> A; ");
                 } else {
                     dbg_print!("no result; ");
