@@ -18,7 +18,7 @@ pub fn from_bits(bits: [u8; 8]) -> u8 {
     let mut x = 0;
 
     for (i, bit) in bits.iter().enumerate() {
-        let multiplier = 1 << i;
+        let multiplier = 0x80 >> i;
 
         x += bit * multiplier;
     }
@@ -45,4 +45,51 @@ pub fn separate_values(value: u16) -> (u8, u8) {
     let lower = (value & 0xFF) as u8;
 
     (higher, lower)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn utils_get_bits() {
+        assert_eq!(
+            get_bits(0b11001100),
+            [1,1,0,0,1,1,0,0]
+        );
+
+        assert_eq!(
+            get_bits(0b01011010),
+            [0,1,0,1,1,0,1,0]
+        );
+    }
+
+    #[test]
+    fn utils_from_bits() {
+        assert_eq!(
+            from_bits([1,1,0,0,1,1,0,0]),
+            0b11001100u8
+        );
+
+        assert_eq!(
+            from_bits([0,1,0,1,1,0,1,0]),
+            0b01011010u8
+        );
+    }
+
+    #[test]
+    fn utils_combine_values() {
+        assert_eq!(
+            combine_values(0xAB, 0xCD),
+            0xABCDu16
+        );
+    }
+
+    #[test]
+    fn utils_separate_values() {
+        assert_eq!(
+            separate_values(0xABCD),
+            (0xAB, 0xCD)
+        );
+    }
 }
