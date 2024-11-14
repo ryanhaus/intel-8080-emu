@@ -15,7 +15,7 @@ use memory::*;
 use registers::*;
 
 // macro to help with debug output
-const DEBUG_OUTPUT: bool = false;
+const DEBUG_OUTPUT: bool = true;
 
 macro_rules! dbg_print {
     ( $x:expr ) => {
@@ -347,9 +347,15 @@ impl Cpu {
             | ComplementCarry => {
                 let alu_op = AluOperation::from_instruction(self, instruction)?;
 
-                dbg_println!("execute (ALU operation): evaluating {alu_op:X?}");
+                dbg_print!("execute (ALU operation): evaluating {alu_op:X?}; ");
 
-                self.alu.evaluate(alu_op)?;
+                let result = self.alu.evaluate(alu_op)?;
+
+                if let Some(result) = result {
+                    dbg_println!("{result:X?} -> A");
+                } else {
+                    dbg_println!("no result");
+                }
             }
 
             // DAD (Double Byte Add)
