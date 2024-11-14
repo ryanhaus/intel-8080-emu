@@ -237,22 +237,22 @@ impl Instruction {
                 Register::from_rp_id(rp)?,
             ))),
 
-            // RLC: rotate A left through carry
-            [0, 0, 0, 0, 0, 1, 1, 1] => Ok(Instruction::RotateLeftThroughCarry(
+            // RLC: rotate A left
+            [0, 0, 0, 0, 0, 1, 1, 1] => Ok(Instruction::RotateLeft(
                 InstructionSource::Accumulator,
             )),
 
-            // RRC: rotate A right through carry
-            [0, 0, 0, 0, 1, 1, 1, 1] => Ok(Instruction::RotateRightThroughCarry(
+            // RRC: rotate A right
+            [0, 0, 0, 0, 1, 1, 1, 1] => Ok(Instruction::RotateRight(
                 InstructionSource::Accumulator,
             )),
 
-            // RAL: rotate A left
-            [0, 0, 0, 1, 0, 1, 1, 1] => Ok(Instruction::RotateLeft(InstructionSource::Accumulator)),
+            // RAL: rotate A left through carry
+            [0, 0, 0, 1, 0, 1, 1, 1] => Ok(Instruction::RotateLeftThroughCarry(InstructionSource::Accumulator)),
 
-            // RAL: rotate A right
+            // RAL: rotate A right through carry
             [0, 0, 0, 1, 1, 1, 1, 1] => {
-                Ok(Instruction::RotateRight(InstructionSource::Accumulator))
+                Ok(Instruction::RotateRightThroughCarry(InstructionSource::Accumulator))
             }
 
             // DAA: decimal adjust A
