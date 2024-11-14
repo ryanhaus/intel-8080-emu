@@ -296,41 +296,65 @@ impl Cpu {
             // increments a value
             Increment(source) => {
                 let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
-                let rhs = match src_size {
-                    MemorySize::Integer8 => RegisterValue::from(1u8),
-                    MemorySize::Integer16 => RegisterValue::from(1u16),
-                };
 
-                let sum = InstructionSource::Sum(
-                    Box::new(source.clone()),
-                    Box::new(InstructionSource::Value(rhs)),
-                );
+                if matches!(src_size, MemorySize::Integer8) && matches!(source, InstructionSource::Register(_)) || matches!(source, InstructionSource::Accumulator) {
+                    // use ALU for 8-bit registers
+                    let val = self.evaluate_source(source.clone())?;
+                    let result = self.alu.evaluate(AluOperation::Increment(val))?.unwrap();
+                    
+                    self.write_to_source(source, result)?;
 
-                let result = self.evaluate_source(sum)?;
+                    dbg_println!("execute (Increment): {result:X?}");
+                } else {
+                    // decrement manually
+                    let rhs = match src_size {
+                        MemorySize::Integer8 => RegisterValue::from(1u8),
+                        MemorySize::Integer16 => RegisterValue::from(1u16),
+                    };
 
-                dbg_println!("execute (Increment): {result:X?} -> {source:?}");
+                    let sum = InstructionSource::Sum(
+                        Box::new(source.clone()),
+                        Box::new(InstructionSource::Value(rhs)),
+                    );
 
-                self.write_to_source(source, result)?;
+                    let result = self.evaluate_source(sum)?;
+
+                    dbg_println!("execute (Increment): {result:X?} -> {source:?}");
+
+                    self.write_to_source(source, result)?;
+               }
             }
 
             // decrements a value
             Decrement(source) => {
                 let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
-                let rhs = match src_size {
-                    MemorySize::Integer8 => RegisterValue::from(1u8.wrapping_neg()),
-                    MemorySize::Integer16 => RegisterValue::from(1u16.wrapping_neg()),
-                };
 
-                let sum = InstructionSource::Sum(
-                    Box::new(source.clone()),
-                    Box::new(InstructionSource::Value(rhs)),
-                );
+                if matches!(src_size, MemorySize::Integer8) && matches!(source, InstructionSource::Register(_)) || matches!(source, InstructionSource::Accumulator) {
+                    // use ALU for 8-bit registers
+                    let val = self.evaluate_source(source.clone())?;
+                    let result = self.alu.evaluate(AluOperation::Decrement(val))?.unwrap();
+                    
+                    self.write_to_source(source, result)?;
 
-                let result = self.evaluate_source(sum)?;
+                    dbg_println!("execute (Decrement): {result:X?}");
+                } else {
+                    // decrement manually
+                    let rhs = match src_size {
+                        MemorySize::Integer8 => RegisterValue::from(1u8.wrapping_neg()),
+                        MemorySize::Integer16 => RegisterValue::from(1u16.wrapping_neg()),
+                    };
 
-                dbg_println!("execute (Decrement): {result:X?} -> {source:?}");
+                    let sum = InstructionSource::Sum(
+                        Box::new(source.clone()),
+                        Box::new(InstructionSource::Value(rhs)),
+                    );
 
-                self.write_to_source(source, result)?;
+                    let result = self.evaluate_source(sum)?;
+
+                    dbg_println!("execute (Decrement): {result:X?} -> {source:?}");
+
+                    self.write_to_source(source, result)?;
+               }
             }
 
             // moves a value to another place
