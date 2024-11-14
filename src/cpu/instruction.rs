@@ -174,9 +174,9 @@ impl Instruction {
                 Ok(Instruction::Move(
                         InstructionSource::Memory(
                             MemorySource::Register(reg_pair),
-                            MemorySize::Integer16
+                            MemorySize::Integer8
                         ),
-                        InstructionSource::Register(reg_pair)
+                        InstructionSource::Accumulator
                 ))
             }
 
