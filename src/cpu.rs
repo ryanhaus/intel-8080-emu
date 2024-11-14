@@ -180,6 +180,20 @@ impl Cpu {
             // if the source is a register
             Register(register) => {
                 self.reg_array.write_reg(register, value)?;
+
+                // if the register being written to is the PSW, the A register
+                // and flags must be updated as well
+                if matches!(register, registers::Register::PSW) {
+                    let value = u16::from(value);
+                    let a = (value >> 8) as u8;
+                    let a = RegisterValue::from(a);
+
+                    let f = (value & 0xFF) as u8;
+                    let f = RegisterValue::from(f);
+
+                    self.alu.write_accumulator(a)?;
+                    self.alu.write_flags(AluFlags::from_f(f)?);
+                }
             }
 
             // if the source is the accumulator (A register)

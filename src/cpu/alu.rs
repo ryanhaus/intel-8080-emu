@@ -39,6 +39,30 @@ impl AluFlags {
         }
     }
 
+    // creates a new instance of AluFlags from the value of the F register
+    pub fn from_f(value: RegisterValue) -> Result<Self, String> {
+        //.F is in the format SZ0A0P1C
+        let value = u8::try_from(value)?;
+        let bits = utils::get_bits(value);
+
+        // make sure the constant bits match
+        //if bits[2] != 0 || bits[4] != 0 || bits[6] != 1 {
+        //    return Err(format!("Invalid F register value: {value:08b}"));
+        //}
+
+        // set the flags accordingly
+        let mut flags = AluFlags::new();
+        flags.sign = bits[0] != 0;
+        flags.zero = bits[1] != 0;
+        flags.aux_carry = bits[3] != 0;
+        flags.parity = bits[5] != 0;
+        flags.carry = bits[7] != 0;
+
+        println!("New flags: {flags:?}");
+
+        Ok(flags)
+    }
+
     // evaluates an InstructionCondition based on the flags
     pub fn evaluate_condition(&self, condition: InstructionCondition) -> bool {
         use InstructionCondition::*;
@@ -217,6 +241,11 @@ impl Alu {
         self.accumulator = value;
 
         Ok(())
+    }
+
+    // writes to the ALU flags
+    pub fn write_flags(&mut self, flags: AluFlags) {
+        self.flags = flags;
     }
 
     // returns the flags of the alu
