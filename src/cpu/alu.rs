@@ -58,8 +58,6 @@ impl AluFlags {
         flags.parity = bits[5] != 0;
         flags.carry = bits[7] != 0;
 
-        println!("New flags: {flags:?}");
-
         Ok(flags)
     }
 

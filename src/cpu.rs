@@ -15,7 +15,7 @@ use memory::*;
 use registers::*;
 
 // macro to help with debug output
-const DEBUG_OUTPUT: bool = true;
+const DEBUG_OUTPUT: bool = false;
 
 macro_rules! dbg_print {
     ( $x:expr ) => {
@@ -262,7 +262,7 @@ impl Cpu {
         // make sure to update the status word before anything
         self.update_status_word()?;
 
-        println!("{:X?}: {instruction:?}", u16::from(self.reg_array.read_reg(Register::PC)) - 1);
+        // println!("{:X?}: {instruction:?}", u16::from(self.reg_array.read_reg(Register::PC)) - 1);
 
         // handle the instruction
         use Instruction::*;
