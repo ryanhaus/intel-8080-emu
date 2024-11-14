@@ -352,10 +352,13 @@ impl Cpu {
                 let result = self.alu.evaluate(alu_op)?;
 
                 if let Some(result) = result {
-                    dbg_println!("{result:X?} -> A");
+                    dbg_print!("{result:X?} -> A; ");
                 } else {
-                    dbg_println!("no result");
+                    dbg_print!("no result; ");
                 }
+
+                let flags = self.alu.flags();
+                dbg_println!("flags: {flags:?}");
             }
 
             // DAD (Double Byte Add)
