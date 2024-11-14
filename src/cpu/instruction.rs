@@ -102,6 +102,7 @@ pub enum Instruction {
     RotateRight(InstructionSource),
     RotateRightThroughCarry(InstructionSource),
     DecimalAdjust(InstructionSource),
+    DoubleByteAdd(InstructionSource),
     Complement(InstructionSource),
     SetCarry,
     ComplementCarry,
@@ -202,12 +203,8 @@ impl Instruction {
             )),
 
             // DAD rp: HL <- HL + RP
-            [0, 0, _, _, 1, 0, 0, 1] => Ok(Instruction::Move(
-                InstructionSource::Register(Register::HL),
-                InstructionSource::Sum(
-                    Box::new(InstructionSource::Register(Register::HL)),
-                    Box::new(InstructionSource::Register(Register::from_rp_id(rp)?)),
-                ),
+            [0, 0, _, _, 1, 0, 0, 1] => Ok(Instruction::DoubleByteAdd(
+                InstructionSource::Register(Register::from_rp_id(rp)?),
             )),
 
             // LHLD addr: HL <- (addr)

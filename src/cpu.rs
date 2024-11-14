@@ -358,6 +358,27 @@ impl Cpu {
                 self.alu.evaluate(alu_op)?;
             }
 
+            // DAD (Double Byte Add)
+            DoubleByteAdd(rp) => {
+                // HL <- HL + RP
+                // Carry flag affected
+                let hl_val = self.reg_array.read_reg(Register::HL);
+                let hl_val = u16::from(hl_val);
+
+                let rp_val = self.evaluate_source(rp)?;
+                let rp_val = u16::from(rp_val);
+
+                let new_hl = RegisterValue::from(hl_val.wrapping_add(rp_val));
+                self.reg_array.write_reg(Register::HL, new_hl)?;
+
+                let new_carry = (hl_val.checked_add(rp_val) == None);
+                if new_carry {
+                    self.alu.evaluate(AluOperation::SetCarry)?;
+                } else if !self.alu.flags().carry {
+                    self.alu.evaluate(AluOperation::ComplementCarry)?;
+                }
+            }
+
             // conditional return
             ReturnConditional(condition) => {
                 if self.alu.flags().evaluate_condition(condition) {
