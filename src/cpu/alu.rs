@@ -413,15 +413,18 @@ impl Alu {
         //    now greater than 9, or if the [carry] flag is set, 6 is added to
         //    the most significant 4 bits of the [register].
 
+        // store copy of flags
+        let flags = self.flags.clone();
+
         // step 1
         let lower_bits = x & 0xF;
-        if lower_bits > 9 || self.flags.aux_carry {
+        if lower_bits > 9 || flags.aux_carry {
             x = self.add(x, 6, false);
         }
 
         // step 2
         let higher_bits = (x & 0xF0) >> 4;
-        if higher_bits > 9 || self.flags.carry {
+        if higher_bits > 9 || flags.carry {
             x = self.add(x, 0x60, false);
         }
 
