@@ -248,13 +248,7 @@ impl Cpu {
         // make sure to update the status word before anything
         self.update_status_word()?;
 
-        // if PC == 0x0006 (meaning that the instruction was read from 0x0005),
-        // then the CP/M BDOS subroutine should be called
-        if self.reg_array.read_reg(Register::PC) == RegisterValue::from(0x0006u16) {
-            dbg_println!("execute (CP/M BDOS Subroutine)");
-            self.cpm_bdos_subroutine()?;
-            return Ok(());
-        }
+        println!("{:X?}: {instruction:?}", u16::from(self.reg_array.read_reg(Register::PC)) - 1);
 
         // handle the instruction
         use Instruction::*;
@@ -269,7 +263,7 @@ impl Cpu {
                 let imm_size = MemorySize::from_bytes(dest.n_bytes()?)?;
                 let imm_val = self.memory.read(addr, imm_size)?;
 
-                dbg_println!("execute (Load): {imm_val:X?} -> {dest:?}");
+                dbg_println!("execute (Load): ({addr:X?}) = {imm_val:X?} -> {dest:?}");
 
                 self.write_to_source(dest, imm_val)?;
             }
@@ -472,12 +466,19 @@ impl Cpu {
             // unconditional call
             Call => {
                 let addr = self.read_next(MemorySize::Integer16)?;
-                dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
+                // CP/M BDOS subroutine
+                if addr == RegisterValue::from(0x0005u16) {
+                    dbg_println!("execute (Call): Calling CP/M BDOS subroutine");
+                    self.cpm_bdos_subroutine()?;
+                }
+                else {
+                    dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
 
-                let pc_val = self.reg_array.read_reg(Register::PC);
-                self.push_to_stack(pc_val)?;
+                    let pc_val = self.reg_array.read_reg(Register::PC);
+                    self.push_to_stack(pc_val)?;
 
-                self.reg_array.write_reg(Register::PC, addr)?;
+                    self.reg_array.write_reg(Register::PC, addr)?;
+                }
             }
 
             // IO output
@@ -521,6 +522,8 @@ impl Cpu {
                 self.interrupts_enabled = true;
             }
         }
+
+        dbg_println!("");
 
         // update the status word again
         self.update_status_word()?;
@@ -647,10 +650,6 @@ impl Cpu {
             // otherwise, do nothing
             _ => {}
         }
-
-        // increase PC, do a RET
-        self.read_next(MemorySize::Integer8)?;
-        self.execute(Instruction::Return)?;
 
         Ok(())
     }
