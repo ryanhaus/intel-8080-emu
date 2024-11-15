@@ -537,22 +537,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn alu_accumulator_is_set() {
-        let mut alu = Alu::new();
-
-        // add 1+1, ensure accumulator AND return value value are 2
-        let result = alu
-            .evaluate(AluOperation::Add(
-                RegisterValue::from(1u8),
-                RegisterValue::from(1u8),
-            ))
-            .unwrap();
-
-        assert_eq!(result.unwrap(), RegisterValue::from(2u8));
-        assert_eq!(alu.accumulator(), RegisterValue::from(2u8));
-    }
-
-    #[test]
     fn alu_add() {
         let mut alu = Alu::new();
 

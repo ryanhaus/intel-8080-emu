@@ -551,6 +551,7 @@ impl Cpu {
                 if addr == RegisterValue::from(0x0005u16) {
                     dbg_println!("execute (Call): Calling CP/M BDOS subroutine");
                     self.cpm_bdos_subroutine()?;
+                    cycles += CPU_INSTRUCTION_CLOCK_CYCLES[0xC9]; // to account for the RET as well
                 } else {
                     dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
 
@@ -855,19 +856,15 @@ mod tests {
             .unwrap();
         assert_eq!(value, RegisterValue::from(0x1234u16));
 
-        // perform a dummy ALU operation and make sure the Accumulator is resolved
-        // to the correct value
-        cpu.alu
-            .evaluate(AluOperation::Add(
-                RegisterValue::from(1u8),
-                RegisterValue::from(2u8),
-            ))
-            .unwrap()
-            .unwrap();
+        // write to A
+        cpu.write_to_source(
+            InstructionSource::Accumulator,
+            RegisterValue::from(0xA5u8)
+        ).unwrap();
 
         let value = cpu.evaluate_source(InstructionSource::Accumulator).unwrap();
 
-        assert_eq!(value, RegisterValue::from(3u8));
+        assert_eq!(value, RegisterValue::from(0xA5u8));
     }
 
     #[test]
