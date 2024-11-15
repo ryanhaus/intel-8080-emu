@@ -4,9 +4,7 @@
  */
 
 use super::utils;
-use std::{
-    convert::{From, TryFrom},
-};
+use std::convert::{From, TryFrom};
 
 // RegisterArray struct - contains all register values
 #[derive(Debug)]
@@ -167,8 +165,6 @@ impl Register {
     }
 
     pub fn from_rp_id(id: u8) -> Result<Self, String> {
-        
-
         match id {
             0b00 => Ok(Register::BC),
             0b01 => Ok(Register::DE),

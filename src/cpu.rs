@@ -119,8 +119,6 @@ impl Cpu {
     fn evaluate_source(&mut self, source: InstructionSource) -> Result<RegisterValue, String> {
         use InstructionSource::*;
 
-        
-
         match source {
             // if the source value is contained in memory
             Memory(memory_source, size) => {
@@ -871,10 +869,8 @@ mod tests {
         assert_eq!(value, RegisterValue::from(0x1234u16));
 
         // write to A
-        cpu.write_to_source(
-            InstructionSource::Accumulator,
-            RegisterValue::from(0xA5u8)
-        ).unwrap();
+        cpu.write_to_source(InstructionSource::Accumulator, RegisterValue::from(0xA5u8))
+            .unwrap();
 
         let value = cpu.evaluate_source(InstructionSource::Accumulator).unwrap();
 
