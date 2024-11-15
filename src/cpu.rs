@@ -14,6 +14,27 @@ use instruction::*;
 use memory::*;
 use registers::*;
 
+// holds the base number of clock cycles used by each opcode
+// note that for conditional call/ret, if the branch is taken, this number is increased by 6
+const CPU_INSTRUCTION_CLOCK_CYCLES: [usize; 256] = [
+    4, 10, 7,  5,  5,  5,  7,  4,  4, 10, 7,  5,  5,  5,  7, 4,
+    4, 10, 7,  5,  5,  5,  7,  4,  4, 10, 7,  5,  5,  5,  7, 4,
+    4, 10, 16, 5,  5,  5,  7,  4,  4, 10, 16, 5,  5,  5,  7, 4,
+    4, 10, 13, 5,  10, 10, 10, 4,  4, 10, 13, 5,  5,  5,  7, 4,
+    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
+    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
+    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
+    7, 7,  7,  7,  7,  7,  7,  7,  5, 5,  5,  5,  5,  5,  7, 5,
+    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
+    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
+    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
+    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
+    5, 10, 10, 10, 11, 11, 7,  11, 5, 10, 10, 10, 11, 17, 7, 11,
+    5, 10, 10, 10, 11, 11, 7,  11, 5, 10, 10, 10, 11, 17, 7, 11,
+    5, 10, 10, 18, 11, 11, 7,  11, 5, 5,  10, 4,  11, 17, 7, 11,
+    5, 10, 10, 4,  11, 11, 7,  11, 5, 5,  10, 4,  11, 17, 7, 11
+];
+
 // macro to help with debug output
 const DEBUG_OUTPUT: bool = false;
 
@@ -47,6 +68,7 @@ pub struct Cpu {
     memory: Memory,
     ports: [RegisterValue; 0x100],
     port_handler_fn: Option<PortHandlerFn>,
+    total_cycles: usize,
 }
 
 impl Cpu {
@@ -60,6 +82,7 @@ impl Cpu {
             memory: Memory::new(),
             ports: [RegisterValue::from(0u8); 256],
             port_handler_fn: None,
+            total_cycles: 0,
         }
     }
 
@@ -89,13 +112,14 @@ impl Cpu {
     }
 
     // decodes the instruction at the current program counter into an Instruction enum
-    fn decode_next_instruction(&mut self) -> Result<Instruction, String> {
+    fn decode_next_instruction(&mut self) -> Result<(u8, Instruction), String> {
         let instruction = self.read_next(MemorySize::Integer8)?;
+        let opcode = u8::try_from(instruction)?;
         let instruction = Instruction::decode(instruction)?;
 
         dbg_println!("decode_next_instruction: {instruction:?}");
 
-        Ok(instruction)
+        Ok((opcode, instruction))
     }
 
     // evaluates the value of a InstructionSource into a RegisterValue
@@ -257,12 +281,16 @@ impl Cpu {
         Ok(())
     }
 
-    // executes an instruction
-    pub fn execute(&mut self, instruction: Instruction) -> Result<(), String> {
+    // executes an instruction, returns result with # of cycles. also modifies self::total_cycles
+    pub fn execute(&mut self, opcode: u8, instruction: Instruction) -> Result<usize, String> {
+        // holds the number of clock cycles used by the instruction
+        // conditional call/ret should increase this by 6 if branch taken
+        let mut cycles = CPU_INSTRUCTION_CLOCK_CYCLES[opcode as usize];
+
         // make sure to update the status word before anything
         self.update_status_word()?;
 
-        // println!("{:X?}: {instruction:?}", u16::from(self.reg_array.read_reg(Register::PC)) - 1);
+        //println!("{:X?}: {instruction:?}", u16::from(self.reg_array.read_reg(Register::PC)) - 1);
 
         // handle the instruction
         use Instruction::*;
@@ -428,6 +456,7 @@ impl Cpu {
                     let new_pc = self.pop_from_stack(MemorySize::Integer16)?;
                     dbg_println!("execute (ReturnConditional): {new_pc:X?} -> PC");
                     self.reg_array.write_reg(Register::PC, new_pc)?;
+                    cycles += 6;
                 } else {
                     dbg_println!("execute (ReturnConditional): branch not taken");
                 }
@@ -480,6 +509,7 @@ impl Cpu {
                     self.push_to_stack(pc_val)?;
 
                     self.reg_array.write_reg(Register::PC, addr)?;
+                    cycles += 6;
                 } else {
                     dbg_println!("execute (CallConditional): branch not taken");
                 }
@@ -577,16 +607,21 @@ impl Cpu {
         self.update_status_word()?;
 
         // if we get here, execution was ok
-        Ok(())
+        if cycles != 0 {
+            self.total_cycles += cycles;
+            Ok(cycles)
+        } else {
+            Err(String::from("Clock cycles taken by an instruction must not be 0"))
+        }
     }
 
     // executes the next instruction in memory
-    pub fn execute_next(&mut self) -> Result<(), String> {
+    pub fn execute_next(&mut self) -> Result<usize, String> {
         if self.running {
-            let instruction = self.decode_next_instruction();
-            self.execute(instruction?)
+            let (opcode, instruction) = self.decode_next_instruction()?;
+            self.execute(opcode, instruction)
         } else {
-            Ok(())
+            Ok(0)
         }
     }
 
@@ -700,6 +735,11 @@ impl Cpu {
         }
 
         Ok(())
+    }
+
+    // returns the total_cycles field
+    pub fn get_total_cycles(&self) -> usize {
+        self.total_cycles
     }
 }
 

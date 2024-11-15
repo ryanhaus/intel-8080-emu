@@ -36,4 +36,6 @@ fn main() {
     while cpu.is_running() {
         cpu.execute_next().unwrap();
     }
+
+    println!("DONE EXECUTION, TOTAL CYCLES: {}", cpu.get_total_cycles());
 }
