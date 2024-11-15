@@ -752,6 +752,20 @@ impl Cpu {
         let new_pc = RegisterValue::from(new_pc);
         self.reg_array.write_reg(Register::PC, new_pc)
     }
+
+    // execute instructions for a given number of cycles, returns the number of
+    // 'overshoot' cycles (i.e., how many cycles were executed minus the target
+    // number)
+    pub fn execute_cycles(&mut self, cycles: usize) -> Result<usize, String> {
+        let target_cycles = self.total_cycles + cycles;
+
+        while self.total_cycles <= target_cycles {
+            self.execute_next()?;
+        }
+
+        let overshoot = self.total_cycles - target_cycles;
+        Ok(overshoot)
+    }
 }
 
 #[cfg(test)]
