@@ -40,7 +40,7 @@ pub struct Memory {
 
 impl std::fmt::Debug for Memory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let width_bytes = 16;
+        let _width_bytes = 16;
 
         let mut mem_str = String::new();
         mem_str.push_str("");

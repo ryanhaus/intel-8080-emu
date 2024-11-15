@@ -53,43 +53,25 @@ mod tests {
 
     #[test]
     fn utils_get_bits() {
-        assert_eq!(
-            get_bits(0b11001100),
-            [1,1,0,0,1,1,0,0]
-        );
+        assert_eq!(get_bits(0b11001100), [1, 1, 0, 0, 1, 1, 0, 0]);
 
-        assert_eq!(
-            get_bits(0b01011010),
-            [0,1,0,1,1,0,1,0]
-        );
+        assert_eq!(get_bits(0b01011010), [0, 1, 0, 1, 1, 0, 1, 0]);
     }
 
     #[test]
     fn utils_from_bits() {
-        assert_eq!(
-            from_bits([1,1,0,0,1,1,0,0]),
-            0b11001100u8
-        );
+        assert_eq!(from_bits([1, 1, 0, 0, 1, 1, 0, 0]), 0b11001100u8);
 
-        assert_eq!(
-            from_bits([0,1,0,1,1,0,1,0]),
-            0b01011010u8
-        );
+        assert_eq!(from_bits([0, 1, 0, 1, 1, 0, 1, 0]), 0b01011010u8);
     }
 
     #[test]
     fn utils_combine_values() {
-        assert_eq!(
-            combine_values(0xAB, 0xCD),
-            0xABCDu16
-        );
+        assert_eq!(combine_values(0xAB, 0xCD), 0xABCDu16);
     }
 
     #[test]
     fn utils_separate_values() {
-        assert_eq!(
-            separate_values(0xABCD),
-            (0xAB, 0xCD)
-        );
+        assert_eq!(separate_values(0xABCD), (0xAB, 0xCD));
     }
 }

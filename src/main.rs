@@ -1,11 +1,11 @@
 mod cpu;
-use cpu::instruction::*;
+
 use cpu::registers::*;
 use cpu::*;
 
 fn port_handler(port: RegisterValue, value: RegisterValue) {
     // println!("Port write occured: {value:X?} written to port {port:X?}");
-    
+
     // terminal example: say terminal out is port 0
     if port == RegisterValue::from(0u8) {
         let value = u8::try_from(value).unwrap();
@@ -19,7 +19,7 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 fn main() {
     let mut cpu = Cpu::new();
     cpu.set_pc(0x100).unwrap();
-    
+
     let program = include_bytes!("TST8080.COM");
     let program = Vec::from(program);
 

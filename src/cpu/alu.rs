@@ -358,16 +358,16 @@ impl Alu {
         // find result, set flags
         let result = x.wrapping_add(y);
 
-        self.flags.zero = (result == 0);
-        self.flags.sign = (result & 0x80 != 0);
-        self.flags.parity = (result.count_ones() % 2 == 0);
-        self.flags.carry = (x.checked_add(y) == None);
+        self.flags.zero = result == 0;
+        self.flags.sign = result & 0x80 != 0;
+        self.flags.parity = result.count_ones() % 2 == 0;
+        self.flags.carry = x.checked_add(y).is_none();
 
         // auxiliary carry has to be found manually
         let x_lower = x & 0xF;
         let y_lower = y & 0xF;
         let lower_sum = x_lower + y_lower;
-        self.flags.aux_carry = (lower_sum & 0x10 > 0);
+        self.flags.aux_carry = lower_sum & 0x10 > 0;
 
         result
     }
@@ -383,15 +383,15 @@ impl Alu {
         // find result, set flags
         let result = x.wrapping_sub(y);
 
-        self.flags.zero = (result == 0);
-        self.flags.sign = (result & 0x80 != 0);
-        self.flags.parity = (result.count_ones() % 2 == 0);
-        self.flags.carry = (x.checked_sub(y) == None);
+        self.flags.zero = result == 0;
+        self.flags.sign = result & 0x80 != 0;
+        self.flags.parity = result.count_ones() % 2 == 0;
+        self.flags.carry = x.checked_sub(y).is_none();
 
         // auxiliary carry has to be found manually
         let x_lower = x & 0xF;
         let y_lower = y & 0xF;
-        self.flags.aux_carry = (x_lower.checked_sub(y_lower) == None);
+        self.flags.aux_carry = x_lower.checked_sub(y_lower).is_none();
 
         result
     }
@@ -436,7 +436,7 @@ impl Alu {
         //    the most significant 4 bits of the [register].
 
         // store copy of flags
-        let flags = self.flags.clone();
+        let flags = self.flags;
 
         // step 1
         let lower_bits = x & 0xF;
@@ -457,9 +457,9 @@ impl Alu {
     fn bitwise_and(&mut self, x: u8, y: u8) -> u8 {
         let result = x & y;
 
-        self.flags.zero = (result == 0);
-        self.flags.sign = (result & 0x80 != 0);
-        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.zero = result == 0;
+        self.flags.sign = result & 0x80 != 0;
+        self.flags.parity = result.count_ones() % 2 == 0;
         self.flags.carry = false;
         self.flags.aux_carry = false;
 
@@ -470,9 +470,9 @@ impl Alu {
     fn bitwise_xor(&mut self, x: u8, y: u8) -> u8 {
         let result = x ^ y;
 
-        self.flags.zero = (result == 0);
-        self.flags.sign = (result & 0x80 != 0);
-        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.zero = result == 0;
+        self.flags.sign = result & 0x80 != 0;
+        self.flags.parity = result.count_ones() % 2 == 0;
         self.flags.carry = false;
         self.flags.aux_carry = false;
 
@@ -483,9 +483,9 @@ impl Alu {
     fn bitwise_or(&mut self, x: u8, y: u8) -> u8 {
         let result = x | y;
 
-        self.flags.zero = (result == 0);
-        self.flags.sign = (result & 0x80 != 0);
-        self.flags.parity = (result.count_ones() % 2 == 0);
+        self.flags.zero = result == 0;
+        self.flags.sign = result & 0x80 != 0;
+        self.flags.parity = result.count_ones() % 2 == 0;
         self.flags.carry = false;
         self.flags.aux_carry = false;
 

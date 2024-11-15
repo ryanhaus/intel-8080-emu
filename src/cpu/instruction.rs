@@ -173,11 +173,11 @@ impl Instruction {
                 }
 
                 Ok(Instruction::Move(
-                        InstructionSource::Memory(
-                            MemorySource::Register(reg_pair),
-                            MemorySize::Integer8
-                        ),
-                        InstructionSource::Accumulator
+                    InstructionSource::Memory(
+                        MemorySource::Register(reg_pair),
+                        MemorySize::Integer8,
+                    ),
+                    InstructionSource::Accumulator,
                 ))
             }
 
@@ -224,11 +224,11 @@ impl Instruction {
                 }
 
                 Ok(Instruction::Move(
-                        InstructionSource::Accumulator,
-                        InstructionSource::Memory(
-                            MemorySource::Register(reg_pair),
-                            MemorySize::Integer8
-                        )
+                    InstructionSource::Accumulator,
+                    InstructionSource::Memory(
+                        MemorySource::Register(reg_pair),
+                        MemorySize::Integer8,
+                    ),
                 ))
             }
 
@@ -238,22 +238,22 @@ impl Instruction {
             ))),
 
             // RLC: rotate A left
-            [0, 0, 0, 0, 0, 1, 1, 1] => Ok(Instruction::RotateLeft(
-                InstructionSource::Accumulator,
-            )),
+            [0, 0, 0, 0, 0, 1, 1, 1] => Ok(Instruction::RotateLeft(InstructionSource::Accumulator)),
 
             // RRC: rotate A right
-            [0, 0, 0, 0, 1, 1, 1, 1] => Ok(Instruction::RotateRight(
+            [0, 0, 0, 0, 1, 1, 1, 1] => {
+                Ok(Instruction::RotateRight(InstructionSource::Accumulator))
+            }
+
+            // RAL: rotate A left through carry
+            [0, 0, 0, 1, 0, 1, 1, 1] => Ok(Instruction::RotateLeftThroughCarry(
                 InstructionSource::Accumulator,
             )),
 
-            // RAL: rotate A left through carry
-            [0, 0, 0, 1, 0, 1, 1, 1] => Ok(Instruction::RotateLeftThroughCarry(InstructionSource::Accumulator)),
-
             // RAL: rotate A right through carry
-            [0, 0, 0, 1, 1, 1, 1, 1] => {
-                Ok(Instruction::RotateRightThroughCarry(InstructionSource::Accumulator))
-            }
+            [0, 0, 0, 1, 1, 1, 1, 1] => Ok(Instruction::RotateRightThroughCarry(
+                InstructionSource::Accumulator,
+            )),
 
             // DAA: decimal adjust A
             [0, 0, 1, 0, 0, 1, 1, 1] => {

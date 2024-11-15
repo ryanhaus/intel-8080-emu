@@ -17,22 +17,15 @@ use registers::*;
 // holds the base number of clock cycles used by each opcode
 // note that for conditional call/ret, if the branch is taken, this number is increased by 6
 const CPU_INSTRUCTION_CLOCK_CYCLES: [usize; 256] = [
-    4, 10, 7,  5,  5,  5,  7,  4,  4, 10, 7,  5,  5,  5,  7, 4,
-    4, 10, 7,  5,  5,  5,  7,  4,  4, 10, 7,  5,  5,  5,  7, 4,
-    4, 10, 16, 5,  5,  5,  7,  4,  4, 10, 16, 5,  5,  5,  7, 4,
-    4, 10, 13, 5,  10, 10, 10, 4,  4, 10, 13, 5,  5,  5,  7, 4,
-    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
-    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
-    5, 5,  5,  5,  5,  5,  7,  5,  5, 5,  5,  5,  5,  5,  7, 5,
-    7, 7,  7,  7,  7,  7,  7,  7,  5, 5,  5,  5,  5,  5,  7, 5,
-    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
-    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
-    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
-    4, 4,  4,  4,  4,  4,  7,  4,  4, 4,  4,  4,  4,  4,  7, 4,
-    5, 10, 10, 10, 11, 11, 7,  11, 5, 10, 10, 10, 11, 17, 7, 11,
-    5, 10, 10, 10, 11, 11, 7,  11, 5, 10, 10, 10, 11, 17, 7, 11,
-    5, 10, 10, 18, 11, 11, 7,  11, 5, 5,  10, 4,  11, 17, 7, 11,
-    5, 10, 10, 4,  11, 11, 7,  11, 5, 5,  10, 4,  11, 17, 7, 11
+    4, 10, 7, 5, 5, 5, 7, 4, 4, 10, 7, 5, 5, 5, 7, 4, 4, 10, 7, 5, 5, 5, 7, 4, 4, 10, 7, 5, 5, 5,
+    7, 4, 4, 10, 16, 5, 5, 5, 7, 4, 4, 10, 16, 5, 5, 5, 7, 4, 4, 10, 13, 5, 10, 10, 10, 4, 4, 10,
+    13, 5, 5, 5, 7, 4, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5,
+    5, 5, 5, 5, 5, 7, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, 5, 5, 5, 5, 7, 5, 7, 7, 7, 7, 7, 7, 7, 7, 5,
+    5, 5, 5, 5, 5, 7, 5, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4, 4, 4, 4, 7, 4, 4,
+    4, 4, 4, 4, 4, 7, 4, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4, 4, 4, 4, 7, 4, 4,
+    4, 4, 4, 4, 4, 7, 4, 5, 10, 10, 10, 11, 11, 7, 11, 5, 10, 10, 10, 11, 17, 7, 11, 5, 10, 10, 10,
+    11, 11, 7, 11, 5, 10, 10, 10, 11, 17, 7, 11, 5, 10, 10, 18, 11, 11, 7, 11, 5, 5, 10, 4, 11, 17,
+    7, 11, 5, 10, 10, 4, 11, 11, 7, 11, 5, 5, 10, 4, 11, 17, 7, 11,
 ];
 
 // macro to help with debug output
@@ -126,7 +119,9 @@ impl Cpu {
     fn evaluate_source(&mut self, source: InstructionSource) -> Result<RegisterValue, String> {
         use InstructionSource::*;
 
-        let value = match source {
+        
+
+        match source {
             // if the source value is contained in memory
             Memory(memory_source, size) => {
                 use MemorySource::*;
@@ -165,9 +160,7 @@ impl Cpu {
 
             // if the source is a value
             Value(value) => Ok(value),
-        };
-
-        value
+        }
     }
 
     // writes a RegisterValue to an InstructionSource
@@ -325,11 +318,14 @@ impl Cpu {
             Increment(source) => {
                 let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
 
-                if matches!(src_size, MemorySize::Integer8) && matches!(source, InstructionSource::Register(_)) || matches!(source, InstructionSource::Accumulator) {
+                if matches!(src_size, MemorySize::Integer8)
+                    && matches!(source, InstructionSource::Register(_))
+                    || matches!(source, InstructionSource::Accumulator)
+                {
                     // use ALU for 8-bit registers
                     let val = self.evaluate_source(source.clone())?;
                     let result = self.alu.evaluate(AluOperation::Increment(val))?.unwrap();
-                    
+
                     self.write_to_source(source, result)?;
 
                     dbg_println!("execute (Increment): {result:X?}");
@@ -350,18 +346,21 @@ impl Cpu {
                     dbg_println!("execute (Increment): {result:X?} -> {source:?}");
 
                     self.write_to_source(source, result)?;
-               }
+                }
             }
 
             // decrements a value
             Decrement(source) => {
                 let src_size = MemorySize::from_bytes(source.n_bytes()?)?;
 
-                if matches!(src_size, MemorySize::Integer8) && matches!(source, InstructionSource::Register(_)) || matches!(source, InstructionSource::Accumulator) {
+                if matches!(src_size, MemorySize::Integer8)
+                    && matches!(source, InstructionSource::Register(_))
+                    || matches!(source, InstructionSource::Accumulator)
+                {
                     // use ALU for 8-bit registers
                     let val = self.evaluate_source(source.clone())?;
                     let result = self.alu.evaluate(AluOperation::Decrement(val))?.unwrap();
-                    
+
                     self.write_to_source(source, result)?;
 
                     dbg_println!("execute (Decrement): {result:X?}");
@@ -382,7 +381,7 @@ impl Cpu {
                     dbg_println!("execute (Decrement): {result:X?} -> {source:?}");
 
                     self.write_to_source(source, result)?;
-               }
+                }
             }
 
             // moves a value to another place
@@ -441,7 +440,7 @@ impl Cpu {
                 let new_hl = RegisterValue::from(hl_val.wrapping_add(rp_val));
                 self.reg_array.write_reg(Register::HL, new_hl)?;
 
-                let new_carry = (hl_val.checked_add(rp_val) == None);
+                let new_carry = hl_val.checked_add(rp_val).is_none();
                 if new_carry {
                     self.alu.evaluate(AluOperation::SetCarry)?;
                 } else if !self.alu.flags().carry {
@@ -552,8 +551,7 @@ impl Cpu {
                 if addr == RegisterValue::from(0x0005u16) {
                     dbg_println!("execute (Call): Calling CP/M BDOS subroutine");
                     self.cpm_bdos_subroutine()?;
-                }
-                else {
+                } else {
                     dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
 
                     let pc_val = self.reg_array.read_reg(Register::PC);
@@ -615,7 +613,9 @@ impl Cpu {
             self.total_cycles += cycles;
             Ok(cycles)
         } else {
-            Err(String::from("Clock cycles taken by an instruction must not be 0"))
+            Err(String::from(
+                "Clock cycles taken by an instruction must not be 0",
+            ))
         }
     }
 
@@ -674,7 +674,7 @@ impl Cpu {
 
         let port_id = u8::try_from(port)? as usize;
         self.ports[port_id] = value;
-        
+
         // if there is a port handler function, call it
         if let Some(port_handler_fn) = self.port_handler_fn {
             port_handler_fn(port, value);
@@ -710,7 +710,7 @@ impl Cpu {
             // C == 9: output string starting at (DE) until $ character is found
             RegisterValue::Integer8(9) => {
                 // store mutable copy of DE, which will be used as the pointer
-                let mut str_pointer = self.reg_array.read_reg(Register::DE).clone();
+                let mut str_pointer = self.reg_array.read_reg(Register::DE);
 
                 // until a $ character is found, output the string
                 loop {
@@ -718,7 +718,7 @@ impl Cpu {
                     let current_char = self.memory.read(str_pointer, MemorySize::Integer8)?;
 
                     // break condition: character is '$'
-                    if current_char == RegisterValue::from('$' as u8) {
+                    if current_char == RegisterValue::from(b'$') {
                         break;
                     }
 
