@@ -18,18 +18,11 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 
 fn main() {
     let mut cpu = Cpu::new();
+    cpu.set_pc(0x100).unwrap();
     
-    // CP/M 'bios' containing just a jump to start the program
-    let cpm_bios_program = vec![
-        0x3E, 0x76, // MVI A,0x76
-        0x32, 0x00, 0x00, // STA 0x0000
-        // start by jumping to 0x100
-        0xC3, 0x00, 0x01, // JMP 0x0100
-    ];
     let program = include_bytes!("TST8080.COM");
     let program = Vec::from(program);
 
-    cpu.load_to_memory(cpm_bios_program, 0).unwrap();
     cpu.load_to_memory(program, 0x100).unwrap();
     cpu.set_port_handler_fn(port_handler);
 

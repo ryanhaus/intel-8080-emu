@@ -494,7 +494,11 @@ impl Cpu {
 
                 dbg_println!("execute (Jump): {addr:X?} -> PC");
 
-                self.reg_array.write_reg(Register::PC, addr)?;
+                if addr == RegisterValue::from(0u16) {
+                    self.running = false;
+                } else {
+                    self.reg_array.write_reg(Register::PC, addr)?;
+                }
             }
 
             // conditional call
@@ -740,6 +744,12 @@ impl Cpu {
     // returns the total_cycles field
     pub fn get_total_cycles(&self) -> usize {
         self.total_cycles
+    }
+
+    // modifies the program counter
+    pub fn set_pc(&mut self, new_pc: u16) -> Result<(), String> {
+        let new_pc = RegisterValue::from(new_pc);
+        self.reg_array.write_reg(Register::PC, new_pc)
     }
 }
 
