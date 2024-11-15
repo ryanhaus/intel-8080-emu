@@ -1,5 +1,6 @@
 mod cpu;
 
+use std::{env,fs};
 use cpu::registers::*;
 use cpu::*;
 
@@ -17,11 +18,18 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 }
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 2 {
+        println!("Usage: {} program", args[0]);
+        return;
+    }
+    
+    let program_name = &args[1];
+    let program = fs::read(program_name).unwrap();
+
     let mut cpu = Cpu::new();
     cpu.set_pc(0x100).unwrap();
-
-    let program = include_bytes!("TST8080.COM");
-    let program = Vec::from(program);
 
     cpu.load_to_memory(program, 0x100).unwrap();
     cpu.set_port_handler_fn(port_handler);
