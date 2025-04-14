@@ -1,8 +1,10 @@
 mod cpu;
+mod debug_menu;
 
 use std::{env,fs};
 use cpu::registers::*;
 use cpu::*;
+use debug_menu::*;
 
 fn port_handler(port: RegisterValue, value: RegisterValue) {
     // println!("Port write occured: {value:X?} written to port {port:X?}");
@@ -18,6 +20,8 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 }
 
 fn main() {
+    init_debug_menu();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 2 {
@@ -39,4 +43,5 @@ fn main() {
     }
 
     println!();
+
 }

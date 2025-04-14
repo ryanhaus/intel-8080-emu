@@ -14,4 +14,10 @@ name = "intel-8080-emu"
 path = "src/main.rs"
 
 [dependencies]
+glium = { version = "0.35.0", default-features = true }
+imgui = { version = "0.12.0", features = [
+	"tables-api",
+] }
+imgui-glium-renderer = "0.13.0"
+imgui-winit-support = "0.13.0"
 rand = "0.8.5"
