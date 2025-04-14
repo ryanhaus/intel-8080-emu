@@ -14,6 +14,8 @@ use instruction::*;
 use memory::*;
 use registers::*;
 
+use std::collections::HashMap;
+
 // holds the base number of clock cycles used by each opcode
 // note that for conditional call/ret, if the branch is taken, this number is increased by 6
 const CPU_INSTRUCTION_CLOCK_CYCLES: [usize; 256] = [
@@ -48,14 +50,15 @@ macro_rules! dbg_println {
 
 // Cpu struct - holds all components of the CPU and has I/O functions
 pub struct Cpu {
-    running: bool,
-    interrupts_enabled: bool,
-    reg_array: RegisterArray,
-    alu: Alu,
-    memory: Memory,
-    ports: [RegisterValue; 0x100],
-    port_handler_fn: Option<Box<dyn Fn(RegisterValue, RegisterValue)>>,
-    total_cycles: usize,
+    pub running: bool,
+    pub interrupts_enabled: bool,
+    pub reg_array: RegisterArray,
+    pub alu: Alu,
+    pub memory: Memory,
+    pub ports: [RegisterValue; 0x100],
+    pub port_handler_fn: Option<Box<dyn Fn(RegisterValue, RegisterValue)>>,
+    pub subroutines: HashMap<u16, fn(&mut Cpu)>,
+    pub total_cycles: usize,
 }
 
 impl Cpu {
@@ -69,6 +72,7 @@ impl Cpu {
             memory: Memory::new(),
             ports: [RegisterValue::from(0u8); 256],
             port_handler_fn: None,
+            subroutines: HashMap::new(),
             total_cycles: 0,
         }
     }
@@ -539,14 +543,19 @@ impl Cpu {
             // unconditional call
             Call => {
                 let addr = self.read_next(MemorySize::Integer16)?;
-                // CP/M BDOS subroutine
-                if addr == RegisterValue::from(0x0005u16) {
-                    dbg_println!("execute (Call): Calling CP/M BDOS subroutine");
-                    self.cpm_bdos_subroutine()?;
-                    cycles += CPU_INSTRUCTION_CLOCK_CYCLES[0xC9]; // to account for the RET as well
-                } else {
-                    dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
+                dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
+                
+                // handle custom subroutines
+                let addr_u16 = u16::from(addr);
+                if self.subroutines.contains_key(&addr_u16) {
+                    dbg_println!("Executing custom subroutine for {addr:X?}...");
 
+                    let subroutine_fn = self.subroutines
+                        .get(&addr_u16)
+                        .unwrap();
+
+                    subroutine_fn(self);
+                } else {
                     let pc_val = self.reg_array.read_reg(Register::PC);
                     self.push_to_stack(pc_val)?;
 
@@ -691,47 +700,9 @@ impl Cpu {
         self.port_handler_fn = Some(Box::new(port_handler_fn));
     }
 
-    // performs the CP/M BDOS subroutine (0x0005)
-    fn cpm_bdos_subroutine(&mut self) -> Result<(), String> {
-        // 0x05 subroutine:
-        //  if C == 9:
-        //      output string starting at (DE) until $ character is found
-        //  if C == 2:
-        //      output single character in E
-
-        match self.reg_array.read_reg(Register::C) {
-            // C == 9: output string starting at (DE) until $ character is found
-            RegisterValue::Integer8(9) => {
-                // store mutable copy of DE, which will be used as the pointer
-                let mut str_pointer = self.reg_array.read_reg(Register::DE);
-
-                // until a $ character is found, output the string
-                loop {
-                    // get the current character
-                    let current_char = self.memory.read(str_pointer, MemorySize::Integer8)?;
-
-                    // break condition: character is '$'
-                    if current_char == RegisterValue::from(b'$') {
-                        break;
-                    }
-
-                    // write to port, increase pointer
-                    self.write_to_port(RegisterValue::from(0u8), current_char)?;
-                    str_pointer = str_pointer.try_add(RegisterValue::from(1u16))?;
-                }
-            }
-
-            // C == 2: output single character in E
-            RegisterValue::Integer8(2) => {
-                let e_val = self.reg_array.read_reg(Register::E);
-                self.write_to_port(RegisterValue::from(0u8), e_val)?;
-            }
-
-            // otherwise, do nothing
-            _ => {}
-        }
-
-        Ok(())
+    // adds a custom subroutine handler
+    pub fn add_subroutine_handler(&mut self, subroutine_addr: u16, handler: fn(&mut Cpu)) {
+        self.subroutines.insert(subroutine_addr, handler);
     }
 
     // returns the total_cycles field

@@ -1,4 +1,5 @@
 mod cpu;
+mod cp_m;
 mod debug_menu;
 
 use std::{env,fs,thread};
@@ -23,6 +24,7 @@ fn main() {
 
     thread::spawn(move || {
         let mut cpu = Cpu::new();
+        cp_m::add_cpm_bdos(&mut cpu);
         cpu.set_pc(0x100).unwrap();
 
         cpu.load_to_memory(program, 0x100).unwrap();
