@@ -47,21 +47,18 @@ macro_rules! dbg_println {
 }
 
 // Cpu struct - holds all components of the CPU and has I/O functions
-#[derive(Debug)]
-pub struct Cpu<PortHandlerFn>
-where PortHandlerFn: Fn(RegisterValue, RegisterValue) {
+pub struct Cpu {
     running: bool,
     interrupts_enabled: bool,
     reg_array: RegisterArray,
     alu: Alu,
     memory: Memory,
     ports: [RegisterValue; 0x100],
-    port_handler_fn: Option<PortHandlerFn>,
+    port_handler_fn: Option<Box<dyn Fn(RegisterValue, RegisterValue)>>,
     total_cycles: usize,
 }
 
-impl<PortHandlerFn> Cpu<PortHandlerFn> 
-where PortHandlerFn: Fn(RegisterValue, RegisterValue) {
+impl Cpu {
     // creates a new empty instance of the Cpu struct
     pub fn new() -> Self {
         Self {
@@ -690,8 +687,8 @@ where PortHandlerFn: Fn(RegisterValue, RegisterValue) {
     }
 
     // sets the port write handler function
-    pub fn set_port_handler_fn(&mut self, port_handler_fn: PortHandlerFn) {
-        self.port_handler_fn = Some(port_handler_fn);
+    pub fn set_port_handler_fn(&mut self, port_handler_fn: impl Fn(RegisterValue, RegisterValue) + 'static) {
+        self.port_handler_fn = Some(Box::new(port_handler_fn));
     }
 
     // performs the CP/M BDOS subroutine (0x0005)

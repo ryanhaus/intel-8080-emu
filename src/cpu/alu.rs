@@ -104,7 +104,7 @@ pub enum AluOperation {
 
 impl AluOperation {
     // converts an ALU-related Instruction to an ALUOperation
-    pub fn from_instruction(cpu: &mut Cpu<impl Fn(RegisterValue, RegisterValue)>, instruction: Instruction) -> Result<Self, String> {
+    pub fn from_instruction(cpu: &mut Cpu, instruction: Instruction) -> Result<Self, String> {
         match instruction {
             Instruction::Add(src_a, src_b) => {
                 let src_a_val = cpu.evaluate_source(src_a)?;

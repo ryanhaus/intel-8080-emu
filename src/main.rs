@@ -26,7 +26,7 @@ fn main() {
         cpu.set_pc(0x100).unwrap();
 
         cpu.load_to_memory(program, 0x100).unwrap();
-        cpu.set_port_handler_fn(|port, value| {
+        cpu.set_port_handler_fn(move |port, value| {
             let port = u8::try_from(port).unwrap();
             let value = u8::try_from(value).unwrap();
 
@@ -34,7 +34,7 @@ fn main() {
                 0 => {
                     let character = value as char;
                     
-                    let mut cpu_output_str = Arc::clone(&cpu_output_str_thr);
+                    let cpu_output_str = Arc::clone(&cpu_output_str_thr);
                     let mut out_str = cpu_output_str.lock().unwrap();
                     (*out_str).push(character);
 
@@ -57,8 +57,8 @@ fn main() {
         ui.window("Output")
             .size([300.0, 110.0], imgui::Condition::FirstUseEver)
             .build(|| {
-                let mut cpu_output_str = Arc::clone(&cpu_output_str);
-                let mut out_str = cpu_output_str.lock().unwrap();
+                let cpu_output_str = Arc::clone(&cpu_output_str);
+                let out_str = cpu_output_str.lock().unwrap();
 
                 ui.text_wrapped(out_str.clone());
             });
