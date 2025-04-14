@@ -1,25 +1,11 @@
 mod cpu;
 mod debug_menu;
 
-use std::{env,fs};
+use std::{env,fs,thread};
+use std::sync::{Arc,Mutex};
 use cpu::registers::*;
 use cpu::*;
 use debug_menu::*;
-
-use std::thread;
-
-fn port_handler(port: RegisterValue, value: RegisterValue) {
-    // println!("Port write occured: {value:X?} written to port {port:X?}");
-
-    // terminal example: say terminal out is port 0
-    if port == RegisterValue::from(0u8) {
-        let value = u8::try_from(value).unwrap();
-        let character = value as char;
-
-        print!("{character}");
-        // print!("Terminal output: {character} ({value:02X})\n");
-    }
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -32,12 +18,30 @@ fn main() {
     let program_name = &args[1];
     let program = fs::read(program_name).unwrap();
 
-    thread::spawn(|| {
+    let cpu_output_str = Arc::new(Mutex::new(String::new()));
+    let cpu_output_str_thr = cpu_output_str.clone();
+
+    thread::spawn(move || {
         let mut cpu = Cpu::new();
         cpu.set_pc(0x100).unwrap();
 
         cpu.load_to_memory(program, 0x100).unwrap();
-        cpu.set_port_handler_fn(port_handler);
+        cpu.set_port_handler_fn(|port, value| {
+            let port = u8::try_from(port).unwrap();
+            let value = u8::try_from(value).unwrap();
+
+            match port {
+                0 => {
+                    let character = value as char;
+                    
+                    let mut cpu_output_str = Arc::clone(&cpu_output_str_thr);
+                    let mut out_str = cpu_output_str.lock().unwrap();
+                    (*out_str).push(character);
+                }
+
+                _ => {}
+            }
+        });
 
         while cpu.is_running() {
             cpu.execute_next().unwrap();
@@ -47,10 +51,13 @@ fn main() {
     });
 
     init_debug_menu(|ui| {
-        ui.window("Intel 8080 Emulator")
+        ui.window("Output")
             .size([300.0, 110.0], imgui::Condition::FirstUseEver)
             .build(|| {
-                ui.text_wrapped("Hello, world!");
+                let mut cpu_output_str = Arc::clone(&cpu_output_str);
+                let mut out_str = cpu_output_str.lock().unwrap();
+
+                ui.text_wrapped(out_str.clone());
             });
     });
 }

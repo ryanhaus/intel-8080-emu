@@ -46,14 +46,10 @@ macro_rules! dbg_println {
     };
 }
 
-// PortHandlerFn - type of a function that handles a port write
-// when a port gets written to, this function gets called with the port as the
-// first argument, and the value written as the second.
-type PortHandlerFn = fn(RegisterValue, RegisterValue);
-
 // Cpu struct - holds all components of the CPU and has I/O functions
 #[derive(Debug)]
-pub struct Cpu {
+pub struct Cpu<PortHandlerFn>
+where PortHandlerFn: Fn(RegisterValue, RegisterValue) {
     running: bool,
     interrupts_enabled: bool,
     reg_array: RegisterArray,
@@ -64,7 +60,8 @@ pub struct Cpu {
     total_cycles: usize,
 }
 
-impl Cpu {
+impl<PortHandlerFn> Cpu<PortHandlerFn> 
+where PortHandlerFn: Fn(RegisterValue, RegisterValue) {
     // creates a new empty instance of the Cpu struct
     pub fn new() -> Self {
         Self {
@@ -675,7 +672,7 @@ impl Cpu {
         self.ports[port_id] = value;
 
         // if there is a port handler function, call it
-        if let Some(port_handler_fn) = self.port_handler_fn {
+        if let Some(ref port_handler_fn) = &mut self.port_handler_fn {
             port_handler_fn(port, value);
         }
 
