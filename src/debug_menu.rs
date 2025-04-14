@@ -13,7 +13,9 @@ use imgui_winit_support::winit::event_loop::EventLoop;
 use imgui_winit_support::winit::window::WindowAttributes;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
-pub fn init_debug_menu() {
+type UIFunction = fn(&mut Ui);
+
+pub fn init_debug_menu(ui_f: UIFunction) {
     let mut imgui = Context::create();
 
     let event_loop = EventLoop::new().unwrap();
@@ -53,8 +55,7 @@ pub fn init_debug_menu() {
             } => {
                 let ui = imgui.frame();
 
-                // draw to UI
-                ui.show_demo_window(&mut true);
+                ui_f(ui);
 
                 let mut target = display.draw();
                 target.clear_color_srgb(1.0, 1.0, 1.0, 1.0);

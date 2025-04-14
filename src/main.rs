@@ -20,7 +20,13 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 }
 
 fn main() {
-    init_debug_menu();
+    init_debug_menu(|ui| {
+        ui.window("Intel 8080 Emulator")
+            .size([300.0, 110.0], imgui::Condition::FirstUseEver)
+            .build(|| {
+                ui.text_wrapped("Hello, world!");
+            });
+    });
 
     let args: Vec<String> = env::args().collect();
 
