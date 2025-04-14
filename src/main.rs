@@ -6,6 +6,8 @@ use cpu::registers::*;
 use cpu::*;
 use debug_menu::*;
 
+use std::thread;
+
 fn port_handler(port: RegisterValue, value: RegisterValue) {
     // println!("Port write occured: {value:X?} written to port {port:X?}");
 
@@ -20,14 +22,6 @@ fn port_handler(port: RegisterValue, value: RegisterValue) {
 }
 
 fn main() {
-    init_debug_menu(|ui| {
-        ui.window("Intel 8080 Emulator")
-            .size([300.0, 110.0], imgui::Condition::FirstUseEver)
-            .build(|| {
-                ui.text_wrapped("Hello, world!");
-            });
-    });
-
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 2 {
@@ -38,16 +32,25 @@ fn main() {
     let program_name = &args[1];
     let program = fs::read(program_name).unwrap();
 
-    let mut cpu = Cpu::new();
-    cpu.set_pc(0x100).unwrap();
+    thread::spawn(|| {
+        let mut cpu = Cpu::new();
+        cpu.set_pc(0x100).unwrap();
 
-    cpu.load_to_memory(program, 0x100).unwrap();
-    cpu.set_port_handler_fn(port_handler);
+        cpu.load_to_memory(program, 0x100).unwrap();
+        cpu.set_port_handler_fn(port_handler);
 
-    while cpu.is_running() {
-        cpu.execute_next().unwrap();
-    }
+        while cpu.is_running() {
+            cpu.execute_next().unwrap();
+        }
 
-    println!();
+        println!();
+    });
 
+    init_debug_menu(|ui| {
+        ui.window("Intel 8080 Emulator")
+            .size([300.0, 110.0], imgui::Condition::FirstUseEver)
+            .build(|| {
+                ui.text_wrapped("Hello, world!");
+            });
+    });
 }
