@@ -37,6 +37,9 @@ fn main() {
                     let mut cpu_output_str = Arc::clone(&cpu_output_str_thr);
                     let mut out_str = cpu_output_str.lock().unwrap();
                     (*out_str).push(character);
+
+                    // also print
+                    print!("{character}");
                 }
 
                 _ => {}
