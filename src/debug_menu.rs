@@ -1,5 +1,5 @@
 /*
- * debug_menu.rs - Contains all code related to the debug menu
+ * debug_menu.rs - Contains all code related to the debug menu and GUI
  * See the imgui-rs crate: https://github.com/imgui-rs/imgui-rs
  * Also referenced: https://github.com/imgui-rs/imgui-examples/blob/main/examples/support/mod.rs
  */
@@ -12,12 +12,13 @@ use imgui_winit_support::winit::window::WindowAttributes;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
 use std::time::Instant;
 
-pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
+// initializes an ImGui window
+pub fn init_imgui(title: &str, ui_f: impl Fn(&mut Ui)) {
     let mut imgui = Context::create();
 
     let event_loop = EventLoop::new().unwrap();
 
-    let window_attributes = WindowAttributes::default().with_title("Intel 8080 Emulator");
+    let window_attributes = WindowAttributes::default().with_title(title);
 
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new()
         .set_window_builder(window_attributes)
