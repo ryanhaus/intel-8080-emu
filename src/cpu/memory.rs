@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn memory_read_write_8bit_random() {
-        use rand::prelude::*;
+        
 
         let mut memory = Memory::new();
 
@@ -144,7 +144,7 @@ mod tests {
             let value = RegisterValue::from(value);
 
             written_values[i] = value;
-            memory.write(RegisterValue::from(i as u16), value);
+            memory.write(RegisterValue::from(i as u16), value).unwrap();
         }
 
         for i in 0..0x10000 {

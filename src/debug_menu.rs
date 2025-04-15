@@ -4,7 +4,6 @@
  * Also referenced: https://github.com/imgui-rs/imgui-examples/blob/main/examples/support/mod.rs
  */
 use glium::Surface;
-use imgui::*;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::winit::event::{Event, WindowEvent};
@@ -58,7 +57,7 @@ pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
 
                 let draw_data = imgui.render();
 
-                if (draw_data.draw_lists_count() > 0) {
+                if draw_data.draw_lists_count() > 0 {
                     renderer.render(&mut target, draw_data).unwrap();
                 }
 

@@ -2,7 +2,6 @@ mod cp_m;
 mod cpu;
 mod debug_menu;
 
-use cpu::registers::*;
 use cpu::*;
 use debug_menu::*;
 use std::sync::{Arc, Mutex};
