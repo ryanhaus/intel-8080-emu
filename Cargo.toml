@@ -14,6 +14,7 @@ name = "intel-8080-emu"
 path = "src/main.rs"
 
 [dependencies]
+clap = { version = "4.5.36", features = ["derive"] }
 glium = { version = "0.35.0", default-features = true }
 imgui = { version = "0.12.0", features = [
 	"tables-api",
