@@ -1,12 +1,12 @@
-mod cpu;
 mod cp_m;
+mod cpu;
 mod debug_menu;
 
-use std::{env,fs,thread};
-use std::sync::{Arc,Mutex};
 use cpu::registers::*;
 use cpu::*;
 use debug_menu::*;
+use std::sync::{Arc, Mutex};
+use std::{env, fs, thread};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -15,7 +15,7 @@ fn main() {
         println!("Usage: {} program", args[0]);
         return;
     }
-    
+
     let program_name = &args[1];
     let program = fs::read(program_name).unwrap();
 
@@ -35,7 +35,7 @@ fn main() {
             match port {
                 0 => {
                     let character = value as char;
-                    
+
                     let cpu_output_str = Arc::clone(&cpu_output_str_thr);
                     let mut out_str = cpu_output_str.lock().unwrap();
                     (*out_str).push(character);

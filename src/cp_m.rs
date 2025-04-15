@@ -2,12 +2,11 @@
  * cp_m.rs - Contains code related to implementing functions
  * in CP/M.
  */
-use crate::cpu::*;
-use crate::cpu::registers::*;
 use crate::cpu::memory::*;
+use crate::cpu::registers::*;
+use crate::cpu::*;
 
 pub fn add_cpm_bdos(cpu: &mut Cpu) {
-
     cpu.add_subroutine_handler(0x0005u16, |cpu| {
         // 0x05 subroutine:
         //  if C == 9:
@@ -32,8 +31,9 @@ pub fn add_cpm_bdos(cpu: &mut Cpu) {
                     }
 
                     // write to port, increase pointer
-                    cpu.write_to_port(RegisterValue::from(0u8), current_char).unwrap();
-                    str_pointer = str_pointer.try_add(RegisterValue::from(1u16)).unwrap();;
+                    cpu.write_to_port(RegisterValue::from(0u8), current_char)
+                        .unwrap();
+                    str_pointer = str_pointer.try_add(RegisterValue::from(1u16)).unwrap();
                 }
             }
 

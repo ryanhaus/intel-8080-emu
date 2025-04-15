@@ -3,24 +3,22 @@
  * See the imgui-rs crate: https://github.com/imgui-rs/imgui-rs
  * Also referenced: https://github.com/imgui-rs/imgui-examples/blob/main/examples/support/mod.rs
  */
-use imgui::*;
 use glium::Surface;
-use std::time::Instant;
+use imgui::*;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;
 use imgui_winit_support::winit::event::{Event, WindowEvent};
 use imgui_winit_support::winit::event_loop::EventLoop;
 use imgui_winit_support::winit::window::WindowAttributes;
 use imgui_winit_support::{HiDpiMode, WinitPlatform};
-
+use std::time::Instant;
 
 pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
     let mut imgui = Context::create();
 
     let event_loop = EventLoop::new().unwrap();
 
-    let window_attributes = WindowAttributes::default()
-        .with_title("Intel 8080 Emulator");
+    let window_attributes = WindowAttributes::default().with_title("Intel 8080 Emulator");
 
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new()
         .set_window_builder(window_attributes)
@@ -42,9 +40,7 @@ pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
             }
 
             Event::AboutToWait => {
-                platform
-                    .prepare_frame(imgui.io_mut(), &window)
-                    .unwrap();
+                platform.prepare_frame(imgui.io_mut(), &window).unwrap();
                 window.request_redraw();
             }
 
@@ -63,9 +59,7 @@ pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
                 let draw_data = imgui.render();
 
                 if (draw_data.draw_lists_count() > 0) {
-                    renderer
-                        .render(&mut target, draw_data)
-                        .unwrap();
+                    renderer.render(&mut target, draw_data).unwrap();
                 }
 
                 target.finish().unwrap();
@@ -90,6 +84,6 @@ pub fn init_debug_menu(ui_f: impl Fn(&mut Ui)) {
             event => {
                 platform.handle_event(imgui.io_mut(), &window, &event);
             }
-        }
-    ).unwrap();
+        })
+        .unwrap();
 }

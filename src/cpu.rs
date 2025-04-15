@@ -544,15 +544,13 @@ impl Cpu {
             Call => {
                 let addr = self.read_next(MemorySize::Integer16)?;
                 dbg_println!("execute (Call): PC -> stack, {addr:X?} -> PC");
-                
+
                 // handle custom subroutines
                 let addr_u16 = u16::from(addr);
                 if self.subroutines.contains_key(&addr_u16) {
                     dbg_println!("Executing custom subroutine for {addr:X?}...");
 
-                    let subroutine_fn = self.subroutines
-                        .get(&addr_u16)
-                        .unwrap();
+                    let subroutine_fn = self.subroutines.get(&addr_u16).unwrap();
 
                     subroutine_fn(self);
                 } else {
@@ -696,7 +694,10 @@ impl Cpu {
     }
 
     // sets the port write handler function
-    pub fn set_port_handler_fn(&mut self, port_handler_fn: impl Fn(RegisterValue, RegisterValue) + 'static) {
+    pub fn set_port_handler_fn(
+        &mut self,
+        port_handler_fn: impl Fn(RegisterValue, RegisterValue) + 'static,
+    ) {
         self.port_handler_fn = Some(Box::new(port_handler_fn));
     }
 
