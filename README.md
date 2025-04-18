@@ -3,6 +3,7 @@ This project is an emulator for the Intel 8080 microprocessor (or, more accurate
 
 ## Running
 To run the project, run `cargo r -- [ROM file]`.<br/>
+Running `cargo r` or `cargo r -- --help` will show a help menu as well.<br/>
 For example, to run the TST8080.COM ROM:<br/>
 ```
 $ cargo r -- roms/TST8080.COM
