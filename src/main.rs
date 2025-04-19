@@ -18,8 +18,14 @@ fn main() {
                                                               // the cpu through port 0
     let cpu_output_str_thr = cpu_output_str.clone(); // clone to be passed to the thread
 
+    let cpu = Cpu::new();
+    let cpu = Arc::new(Mutex::new(cpu));
+    let cpu_thr = cpu.clone();
+
     let sim_handler = move || {
-        let mut cpu = Cpu::new();
+        let cpu_arc = Arc::clone(&cpu_thr);
+        let mut cpu = cpu_arc.lock().unwrap();
+
         cp_m::add_cpm_bdos(&mut cpu);
         cpu.set_pc(0x100).unwrap();
 
@@ -55,14 +61,14 @@ fn main() {
         thread::spawn(sim_handler);
 
         init_imgui("Intel 8080 Emulator", |ui| {
-            ui.window("Output")
-                .size([300.0, 110.0], imgui::Condition::FirstUseEver)
-                .build(|| {
-                    let cpu_output_str = Arc::clone(&cpu_output_str);
-                    let out_str = cpu_output_str.lock().unwrap();
+            let cpu_arc = Arc::clone(&cpu);
+            let mut cpu = cpu_arc.lock().unwrap();
 
-                    ui.text_wrapped(out_str.clone());
-                });
+            let cpu_output_str = Arc::clone(&cpu_output_str);
+            let out_str = cpu_output_str.lock().unwrap();
+
+            cpu_output::add_cpu_output(ui, &*out_str);
+            registers_view::add_registers_view(ui, &cpu.reg_array);
         });
     } else {
         sim_handler();

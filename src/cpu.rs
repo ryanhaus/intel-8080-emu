@@ -56,7 +56,7 @@ pub struct Cpu {
     pub alu: Alu,
     pub memory: Memory,
     pub ports: [RegisterValue; 0x100],
-    pub port_handler_fn: Option<Box<dyn Fn(RegisterValue, RegisterValue)>>,
+    pub port_handler_fn: Option<Box<dyn Fn(RegisterValue, RegisterValue) + Send + 'static>>,
     pub subroutines: HashMap<u16, fn(&mut Cpu)>,
     pub total_cycles: usize,
 }
@@ -696,7 +696,7 @@ impl Cpu {
     // sets the port write handler function
     pub fn set_port_handler_fn(
         &mut self,
-        port_handler_fn: impl Fn(RegisterValue, RegisterValue) + 'static,
+        port_handler_fn: impl Fn(RegisterValue, RegisterValue) + Send + 'static,
     ) {
         self.port_handler_fn = Some(Box::new(port_handler_fn));
     }

@@ -3,6 +3,9 @@
  * See the imgui-rs crate: https://github.com/imgui-rs/imgui-rs
  * Also referenced: https://github.com/imgui-rs/imgui-examples/blob/main/examples/support/mod.rs
  */
+pub mod cpu_output;
+pub mod registers_view;
+
 use glium::Surface;
 use imgui::{Context, Ui};
 use imgui_glium_renderer::Renderer;

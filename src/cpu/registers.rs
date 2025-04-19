@@ -5,6 +5,7 @@
 
 use super::utils;
 use std::convert::{From, TryFrom};
+use strum_macros::EnumIter;
 
 // RegisterArray struct - contains all register values
 #[derive(Debug)]
@@ -101,7 +102,7 @@ impl RegisterArray {
 }
 
 // Register enum - contains all possible registers that can be referenced
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, EnumIter)]
 pub enum Register {
     PC, // 16-bit program counter
     SP, // 16-bit stack pointer

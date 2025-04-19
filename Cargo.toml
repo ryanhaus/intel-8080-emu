@@ -22,3 +22,5 @@ imgui = { version = "0.12.0", features = [
 imgui-glium-renderer = "0.13.0"
 imgui-winit-support = "0.13.0"
 rand = "0.8.5"
+strum = { version = "0.27.1", features = ["strum_macros"] }
+strum_macros = "0.27.1"
